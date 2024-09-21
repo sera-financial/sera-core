@@ -6,13 +6,62 @@ export default function ChatbotUI() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (input.trim()) {
-      setMessages([...messages, { text: input, sender: 'user' }]);
-      // Here you would typically send the input to your AI backend
-      // and then add the AI's response to the messages
+      setMessages(prevMessages => [...prevMessages, { text: input, sender: 'user' }]);
       setInput('');
+
+      // Add an initial AI message that will be updated
+      setMessages(prevMessages => [...prevMessages, { text: '', sender: 'ai', isStreaming: true }]);
+
+      try {
+        const response = await fetch('http://localhost:3001/api/ai/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: input })
+        });
+
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let aiResponse = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          aiResponse += chunk;
+
+          // Update the AI's response in real-time
+          setMessages(prevMessages => {
+            const newMessages = [...prevMessages];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage.sender === 'ai' && lastMessage.isStreaming) {
+              lastMessage.text = aiResponse;
+            }
+            return newMessages;
+          });
+        }
+
+        // Mark the message as no longer streaming
+        setMessages(prevMessages => {
+          const newMessages = [...prevMessages];
+          const lastMessage = newMessages[newMessages.length - 1];
+          if (lastMessage.sender === 'ai' && lastMessage.isStreaming) {
+            lastMessage.isStreaming = false;
+          }
+          return newMessages;
+        });
+
+      } catch (error) {
+        console.error('Error:', error);
+        setMessages(prevMessages => [...prevMessages, { text: "Sorry, I couldn't process that request.", sender: 'ai' }]);
+      }
     }
   };
 
