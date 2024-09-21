@@ -29,8 +29,10 @@ const runOCR = async () => {
         console.log(ocrResponse.data);
 
         // Extract text from the response using backend API
-        const extractedText = await axios.post('http://localhost:3001/api/ai/ocr-extraction', { ocrResponse });
-        console.log(extractedText.data);
+        const extractedText = await axios.post('http://localhost:3001/api/ai/ocr-extraction', { 
+            'message': JSON.stringify(ocrResponse.data)
+        });
+        console.log(extractedText.data.choices[0].message.content);
 
         // TODO: Add transaction to the database
 
