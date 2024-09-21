@@ -29,6 +29,9 @@ export default function Dashboard() {
     // ];
 
     const [transactions, setTransactions] = useState([]);
+    const [bills, setBills] = useState([]);
+    const [showAllTransactions, setShowAllTransactions] = useState(false);
+    const [showAllBills, setShowAllBills] = useState(false);
 
    
 
@@ -820,6 +823,73 @@ export default function Dashboard() {
         window.location.reload();
     }
 
+    const generateMockBills = async () => {
+        try {
+            const accountId = accountDetails.accountId[0];
+            const mockBills = [
+                { status: "pending", payee: "Electric Company", payment_date: "2023-05-15", payment_amount: 150 },
+                { status: "pending", payee: "Water Utility", payment_date: "2023-05-20", payment_amount: 80 },
+                { status: "pending", payee: "Internet Provider", payment_date: "2023-05-25", payment_amount: 70 },
+                { status: "pending", payee: "Phone Company", payment_date: "2023-05-28", payment_amount: 60 },
+                { status: "pending", payee: "Streaming Service", payment_date: "2023-06-01", payment_amount: 15 },
+                { status: "pending", payee: "Gym Membership", payment_date: "2023-06-05", payment_amount: 50 },
+                { status: "pending", payee: "Car Insurance", payment_date: "2023-06-10", payment_amount: 100 },
+                { status: "pending", payee: "Credit Card", payment_date: "2023-06-15", payment_amount: 200 },
+                { status: "pending", payee: "Rent", payment_date: "2023-07-01", payment_amount: 1200 },
+                { status: "pending", payee: "Student Loan", payment_date: "2023-07-05", payment_amount: 300 },
+                { status: "pending", payee: "Home Insurance", payment_date: "2023-07-10", payment_amount: 120 },
+                { status: "pending", payee: "Gas Bill", payment_date: "2023-07-15", payment_amount: 50 },
+                { status: "pending", payee: "Trash Service", payment_date: "2023-07-20", payment_amount: 25 },
+                { status: "pending", payee: "HOA Fees", payment_date: "2023-08-01", payment_amount: 150 },
+                { status: "pending", payee: "Subscription Box", payment_date: "2023-08-05", payment_amount: 35 },
+            ];
+
+            for (const bill of mockBills) {
+                const response = await fetch(`http://api.nessieisreal.com/accounts/${accountId}/bills?key=575fbd2b0728ae7c870640023404c388`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(bill)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to create bill for payee: ${bill.payee}`);
+                }
+            }
+
+            console.log('Mock bills generated successfully');
+            fetchBills();
+        } catch (error) {
+            console.error('Error generating mock bills:', error);
+        }
+    };
+
+    const fetchBills = async () => {
+        try {
+            const accountId = accountDetails.accountId[0];
+            const response = await fetch(`http://api.nessieisreal.com/accounts/${accountId}/bills?key=575fbd2b0728ae7c870640023404c388`);
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch bills');
+            }
+
+            const data = await response.json();
+            setBills(data);
+        } catch (error) {
+            console.error('Error fetching bills:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (accountDetails && accountDetails.accountId) {
+            fetchBills();
+        }
+    }, [accountDetails]);
+
+    const displayedTransactions = showAllTransactions ? transactions : transactions.slice(0, 10);
+    const displayedBills = showAllBills ? bills : bills.slice(0, 10);
+
     return (
         <>
             <Navigation />
@@ -860,11 +930,11 @@ export default function Dashboard() {
 
 				<div className="grid grid-cols-3 gap-4 gap-y-20 mt-10">
 					<div className="col-span-2">
-						<h1>
+						<h1 className="flex items-center">
 							RECENT TRANSACTIONS
 							<button
 								onClick={generateFakeTransactions}
-								className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-1 px-2  text-xs rounded-sm mb-4 ml-4"
+								className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-1 px-2 text-xs rounded-sm mb-4 ml-4"
 							>
 								Generate?
 							</button>
@@ -884,17 +954,11 @@ export default function Dashboard() {
 								</tr>
 							</thead>
 							<tbody>
-								{transactions.map((transaction, index) => (
+								{displayedTransactions.map((transaction, index) => (
 									<tr key={index} className="border-b">
 										<td className="py-2 uppercase">{transaction.description}</td>
 										<td className="py-2 uppercase">
 											{transaction.status}
-											{/* {transaction.category && (
-                                                <div className={`text-white  w-fit px-2 py-1 rounded flex items-center ${categoryIcons[transaction.category].color}`}>
-                                                    <i className={`fa ${categoryIcons[transaction.category].icon} mr-2`}></i>
-                                                    {transaction.category}f
-                                                </div>  
-                                            )} */}
 										</td>
 										<td className="py-2">
 											{transaction.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
@@ -903,6 +967,16 @@ export default function Dashboard() {
 								))}
 							</tbody>
 						</table>
+						{transactions.length > 10 && (
+							<div className="mt-4 text-center">
+								<button
+									onClick={() => setShowAllTransactions(!showAllTransactions)}
+									className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+								>
+									{showAllTransactions ? "Show Less" : "Show All Transactions"}
+								</button>
+							</div>
+						)}
 					</div>
 
 					<div className="col-span-1">
@@ -999,44 +1073,146 @@ export default function Dashboard() {
                             </div>
                         </div>
                     )}
-				</div>
 
-				{isModalOpen && (
-					<div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-						<div className="bg-white max-w-4xl w-full px-6 py-10 rounded-md shadow-md">
-							<h2 className="text-xl font-bold mb-4">
-								Connect Your Bank Account
-							</h2>
-							<div>
-								<div className="mb-4">
-									<label className="block text-sm font-medium text-gray-700">
-										Bank Name
-									</label>
-									<select
-										className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-										required
-									>
-										<option value="bank1">Capital One (Staging)</option>
-									</select>
-								</div>
-								<div className="mb-4">
-									<label className="block text-sm font-medium text-gray-700">
-										Account ID{" "}
-										<button
-											onClick={generate}
-											className="text-xs bg-blue-400 text-white px-2 hover:bg-blue-500 rounded-xs"
-										>
-											Generate?
-										</button>
-									</label>
+                    <div className="col-span-4 mt-10">
+                        <h1 className='flex'>
+                            YOUR BILLS
+                            <button 
+                                onClick={generateMockBills} 
+                                className='ml-auto text-sm bg-blue-500 hover:bg-blue-700 text-white py-1 px-2 rounded-sm'
+                            >
+                                Generate Mock Bills
+                            </button>
+                        </h1>
+                        <div className="mt-4">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b">
+                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Payee</th>
+                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Due Date</th>
+                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Amount</th>
+                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {displayedBills.map((bill, index) => (
+                                        <tr key={index} className="border-b">
+                                            <td className="py-2">{bill.payee}</td>
+                                            <td className="py-2">{new Date(bill.payment_date).toLocaleDateString()}</td>
+                                            <td className="py-2">${bill.payment_amount.toFixed(2)}</td>
+                                            <td className="py-2 capitalize">{bill.status}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {bills.length > 10 && (
+                                <div className="mt-4 text-center">
+                                    <button
+                                        onClick={() => setShowAllBills(!showAllBills)}
+                                        className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+                                    >
+                                        {showAllBills ? "Show Less" : "Show All Bills"}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
-									<input
-										id="account_id"
-										type="text"
-										className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-										required
-									/>
-								</div>
+                    {isModalOpen && (
+                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                            <div className="bg-white max-w-4xl w-full px-6 py-10 rounded-md shadow-md">
+                                <h2 className="text-xl font-bold mb-4">
+                                    Connect Your Bank Account
+                                </h2>
+                                <div>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Bank Name
+                                        </label>
+                                        <select
+                                            className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+                                            required
+                                        >
+                                            <option value="bank1">Capital One (Staging)</option>
+                                        </select>
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Account ID{" "}
+                                            <button
+                                                onClick={generate}
+                                                className="text-xs bg-blue-400 text-white px-2 hover:bg-blue-500 rounded-xs"
+                                            >
+                                                Generate?
+                                            </button>
+                                        </label>
+
+                                        <input
+                                            id="account_id"
+                                            type="text"
+                                            className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2"
+                                            onClick={() => setIsModalOpen(false)}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            onClick={handleConnect}
+                                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                                        >
+                                            Connect
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {isModalOpen && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                        <div className="bg-white max-w-4xl w-full px-6 py-10 rounded-md shadow-md">
+                            <h2 className="text-xl font-bold mb-4">
+                                Connect Your Bank Account
+                            </h2>
+                            <div>
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Bank Name
+                                    </label>
+                                    <select
+                                        className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+                                        required
+                                    >
+                                        <option value="bank1">Capital One (Staging)</option>
+                                    </select>
+                                </div>
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Account ID{" "}
+                                        <button
+                                            onClick={generate}
+                                            className="text-xs bg-blue-400 text-white px-2 hover:bg-blue-500 rounded-xs"
+                                        >
+                                            Generate?
+                                        </button>
+                                    </label>
+
+                                    <input
+                                        id="account_id"
+                                        type="text"
+                                        className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+                                        required
+                                    />
+                                </div>
 
                                 <div className="flex justify-end">
                                     <button
