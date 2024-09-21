@@ -1,3 +1,4 @@
+
 'use client'
 import { useState, useEffect } from 'react';
 import Navigation from '../../components/navigation';
@@ -29,33 +30,7 @@ export default function Dashboard() {
 
     const [transactions, setTransactions] = useState([]);
 
-    useEffect(() => {
-        const fetchTransactions = async () => {
-            if (!accountDetails || !accountDetails._id) return;
-
-            try {
-                const response = await fetch('http://localhost:3001/api/transactions/user-transactions', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch transactions');
-                }
-
-                const data = await response.json();
-                setTransactions(data);
-                console.log(data[0]);
-            } catch (error) {
-                console.error('Error fetching transactions:', error);
-            }
-        };
-
-        fetchTransactions();
-    }, [accountDetails]);
+   
 
 
     const generate = async () => {
@@ -113,6 +88,8 @@ export default function Dashboard() {
 		document.getElementById("account_id").value = data.objectCreated._id;
 		setAccountId(data.objectCreated._id);
 		console.log(accountId);
+
+   
 	};
 
 
@@ -134,12 +111,34 @@ export default function Dashboard() {
                 const data = await response.json();
                 console.log(data);
                 setAccountDetails(data.user); // Ensure this matches the backend response structure
+
+                const transactionsResponse = await fetch(`http://api.nessieisreal.com/accounts/${data.user.accountId[0]}/purchases?key=575fbd2b0728ae7c870640023404c388`, {
+                    method: 'GET',
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                });
+    
+                if (!transactionsResponse.ok) {
+                    throw new Error('Network response was not ok');
+                }
+    
+                const transactionsData = await transactionsResponse.json();
+                console.log("transactions", transactionsData);
+    
+                // store transactions in state
+                setTransactions(transactionsData);
+
+
                 console.log(data.user);
                 setLoading(false);
             } catch (error) {
                 console.error('Error fetching account details:', error);
+                setLoading(false);
             }
         };
+
+        
 
         fetchAccountDetails();
 
@@ -179,7 +178,6 @@ export default function Dashboard() {
     }, [accountDetails]);
 
     const generateFakeTransactions = async () => {
-        // Generate random transactions
         try {
             let merchants = [
                 {
@@ -692,8 +690,9 @@ export default function Dashboard() {
                     "lng": -121.2880
                   }
                 }
-            ];
-
+              ]
+              
+    
             for (const merchant of merchants) {
                 console.log('Generating merchant:', merchant.name);
                 const transactionResponse = await fetch('http://api.nessieisreal.com/merchants?key=575fbd2b0728ae7c870640023404c388', {
@@ -703,17 +702,44 @@ export default function Dashboard() {
                     },
                     body: JSON.stringify(merchant)
                 });
-
+    
                 if (!transactionResponse.ok) {
                     throw new Error(`Failed to generate merchant: ${merchant.name}`);
                 }
-
-                console.log('Merchant generated:', merchant.name);
-
-                
+    
+                const transactionData = await transactionResponse.json();
+                merchant._id = transactionData.objectCreated._id;
+                console.log('Merchant generated:', merchant.name, 'with ID:', merchant._id);
+            }
+    
+            // Create mock transactions
+            const accountId = accountDetails.accountId[0]; // Replace with actual account ID
+            for (const merchant of merchants) {
+                const purchase = {
+                    merchant_id: merchant._id,
+                    medium: "balance",
+                    purchase_date: new Date().toISOString().split('T')[0],
+                    amount: Math.floor(Math.random() * 100) + 1,
+                    status: "pending",
+                    description: `Purchase at ${merchant.name}`
+                };
+    
+                const purchaseResponse = await fetch(`http://api.nessieisreal.com/accounts/${accountId}/purchases?key=575fbd2b0728ae7c870640023404c388`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(purchase)
+                });
+    
+                if (!purchaseResponse.ok) {
+                    throw new Error(`Failed to create purchase for merchant: ${merchant.name}`);
+                }
+    
+                console.log('Purchase created for merchant:', merchant.name);
             }
         } catch (error) {
-            console.error('Error generating merchant:', error);
+            console.error('Error generating merchants or purchases:', error);
         }
     };
 
@@ -847,7 +873,7 @@ export default function Dashboard() {
 							<thead>
 								<tr className="border-b">
 									<th className="py-2 font-normal text-sm uppercase text-gray-500">
-										Name
+										DESCRIPTOR
 									</th>
 									<th className="py-2 font-normal text-sm uppercase text-gray-500">
 										Category
@@ -860,17 +886,19 @@ export default function Dashboard() {
 							<tbody>
 								{transactions.map((transaction, index) => (
 									<tr key={index} className="border-b">
-										<td className="py-2 uppercase">{transaction.name}</td>
+										<td className="py-2 uppercase">{transaction.description}</td>
 										<td className="py-2 uppercase">
 											{transaction.status}
 											{/* {transaction.category && (
                                                 <div className={`text-white  w-fit px-2 py-1 rounded flex items-center ${categoryIcons[transaction.category].color}`}>
                                                     <i className={`fa ${categoryIcons[transaction.category].icon} mr-2`}></i>
                                                     {transaction.category}f
-                                                </div>
+                                                </div>  
                                             )} */}
 										</td>
-										<td className="py-2">{transaction.amount}</td>
+										<td className="py-2">
+											{transaction.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+										</td>
 									</tr>
 								))}
 							</tbody>
