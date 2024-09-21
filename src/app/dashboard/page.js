@@ -17,6 +17,15 @@ export default function Dashboard() {
         router.push('/sera-ai');
     };
 
+    // const transactions = [
+    //     { name: 'Chipotle', category: 'Food', amount: '$54.00' },
+    //     { name: 'Parking Lot Z', category: 'Work', amount: '$54.00' },
+    //     { name: 'Dunkin', category: 'Food/Dining', amount: '$12.00' },
+    //     { name: 'Chipotle', category: 'Food/Dining', amount: '$54.00' },
+    //     { name: 'Chipotle', category: 'Food/Dining', amount: '$54.00' },
+    //     { name: 'VENMO', category: 'Venmo', amount: '$54.00' },
+    // ];
+
     const categoryIcons = {
         'Food': { icon: 'fa-utensils', color: 'bg-red-400' },
         'Work': { icon: 'fa-briefcase', color: 'bg-orange-400' },
