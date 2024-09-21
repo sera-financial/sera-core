@@ -4,8 +4,13 @@ import Navigation from '../../components/navigation';
 
 export default function Dashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [accountId, setAccountId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [accountDetails, setAccountDetails] = useState(null);
+    const [balances, setBalances] = useState([]);
+    const [budgets, setBudgets] = useState([]);
+    const [newBudget, setNewBudget] = useState({ name: '', limit: '' });
+    const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
     const categoryIcons = {
         'Food': { icon: 'fa-utensils', color: 'bg-red-400' },
         'Work': { icon: 'fa-briefcase', color: 'bg-orange-400' },
@@ -112,14 +117,101 @@ export default function Dashboard() {
         };
     }, []);
 
+    useEffect(() => {
+        const fetchBalances = async () => {
+            try {
+                const balancePromises = accountDetails.accountId.map(async (id) => {
+                    const response = await fetch(`http://api.nessieisreal.com/accounts/${id}?key=575fbd2b0728ae7c870640023404c388`);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    const data = await response.json();
+                    return { 
+                        id, 
+                        balance: data.balance,
+                        nickname: data.nickname,
+                        type: data.type,
+                        rewards: data.rewards
+                    };
+                });
+
+                const balances = await Promise.all(balancePromises);
+                setBalances(balances);
+            } catch (error) {
+                console.error('Error fetching balances:', error);
+            }
+        };
+
+        if (accountDetails && accountDetails.accountId) {
+            fetchBalances();
+        }
+    }, [accountDetails]);
+
+    // Fetch budgets
+    useEffect(() => {
+        const fetchBudgets = async () => {
+            try {
+                const response = await fetch(`http://localhost:3001/api/budgets/${accountDetails._id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                setBudgets(data);
+            } catch (error) {
+                console.error('Error fetching budgets:', error);
+            }
+        };
+
+        if (accountDetails) {
+            fetchBudgets();
+        }
+    }, [accountDetails]);
+
+    const handleBudgetChange = (e) => {
+        const { name, value } = e.target;
+        setNewBudget((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleBudgetSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('http://localhost:3001/api/budgets/create', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ userId: accountDetails._id, ...newBudget })
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            setBudgets(data);
+            setNewBudget({ name: '', limit: '' });
+            setIsBudgetModalOpen(false);
+        } catch (error) {
+            console.error('Error creating budget:', error);
+        }
+    };
+
     const handleConnect = async () => {
         let accountId = document.getElementById('account_id').value;
 
-        const response = await fetch(`http://localhost:3001/api/users/account/${accountId}`, {
+        const response = await fetch(`http://localhost:3001/api/users/account/updateId`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                accountId: accountId
+            })
         });
 
         const data = await response.json();
@@ -169,10 +261,10 @@ export default function Dashboard() {
 						<h1>
 							RECENT TRANSACTIONS
 							<button
-								onClick={generateFakeTransactions}
-								className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-1 px-2 rounded mb-4 ml-4"
+								//onClick={generateFakeTransactions}
+								className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-1 px-2  text-xs rounded-full mb-4 ml-4"
 							>
-								Generate Fake Transaction
+								Generate?
 							</button>
 						</h1>
 						<table className="w-full text-left">
@@ -198,7 +290,7 @@ export default function Dashboard() {
 											{/* {transaction.category && (
                                                 <div className={`text-white  w-fit px-2 py-1 rounded flex items-center ${categoryIcons[transaction.category].color}`}>
                                                     <i className={`fa ${categoryIcons[transaction.category].icon} mr-2`}></i>
-                                                    {transaction.category}
+                                                    {transaction.category}f
                                                 </div>
                                             )} */}
 										</td>
@@ -210,8 +302,23 @@ export default function Dashboard() {
 					</div>
 
 					<div className="col-span-1">
-						<h1>ENDING BALANCES</h1>
-						<div className="text-center bg-neutral-100 px-4 py-10 mt-2">
+						<h1 className='flex'>ENDING BALANCES
+                        {balances.length != 0 && (
+                                <button 								onClick={() => setIsModalOpen(true)}
+                                 className='ml-auto text-sm bg-blue-500 hover:bg-blue-700 text-white  py-1 px-2 rounded-full'>Add Account</button>
+                        )}
+                        </h1>
+                        {balances.map((account, index) => (
+                            <div key={index} className="bg-neutral-100 shadow-md rounded-sm mt-4 p-4 mb-4">
+                                <p className="text-md text-neutral-400 truncate">{account.type.toUpperCase()} {account.nickname}</p>
+                                <p className="text-xl text-green-500 ">
+                                    ${account.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
+                                <p className="text-sm text-gray-500 hidden">Rewards: {account.rewards}</p>
+                            </div>
+                        ))}
+                        {balances.length === 0 && (
+                            <div className="text-center bg-neutral-100 px-4 py-10 mt-2">
 							<i className="fa-solid fa-bank fa-2xl text-neutral-400"></i>
 							<p className="mt-4">
 								Hmm, looks like you haven't connected an account to Sera.
@@ -221,44 +328,73 @@ export default function Dashboard() {
 								onClick={() => setIsModalOpen(true)}
 							>
 								Connect your bank account
-							</button>
-						</div>
+                                </button>
+                            </div>
+                        )}
 					</div>
 
 					<div className="col-span-4">
-						<h1>YOUR BUDGETS</h1>
-						<div className="grid grid-cols-3 gap-4">
-							{/* Add your budget items here */}
+						<h1 className='flex'>YOUR BUDGETS
+                            <button 
+                                onClick={() => setIsBudgetModalOpen(true)} 
+                                className='ml-auto text-sm bg-blue-500 hover:bg-blue-700 text-white py-1 px-2 rounded-full'>
+                                Create Budget
+                            </button>
+                        </h1>
+                        <div className="grid grid-cols-3 gap-4 gap-y-10">
+                            {budgets.map((budget, index) => (
+                                <div key={index} className="bg-neutral-100 px-4 py-10 rounded-md border-l-4 border-blue-400 mt-4">
+                                    <h1 className="text-xl font-bold">{budget.name}</h1>
+                                    <p className="text-lg text-neutral-400">
+                                        Limit: ${budget.limit}
+                                    </p>
+                                    <p className="text-lg text-neutral-400">
+                                        Spent: ${budget.spent}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
 
-							<div className="bg-neutral-100 px-4 py-10 rounded-md border-l-4 border-blue-400 mt-4">
-								<h1 className="text-xl font-bold">Groceries</h1>
-								<p className="text-lg text-neutral-400">
-									You've spent $120.00 this month
-								</p>
-							</div>
+                        <br></br>             <br></br>             <br></br>             <br></br>
+                    </div>
 
-							<div className="bg-neutral-100 px-4 py-10 rounded-md border-l-4 border-red-400 mt-4">
-								<h1 className="text-xl font-bold">Entertainment</h1>
-								<p className="text-lg text-neutral-400">
-									You've spent $10.00 this month
-								</p>
-							</div>
-
-							<div className="bg-neutral-100 px-4 py-10 rounded-md border-l-4 border-green-400 mt-4">
-								<h1 className="text-xl font-bold">Restaurants</h1>
-								<p className="text-lg text-neutral-400">
-									You've spent $100.00 this month
-								</p>
-							</div>
-
-							<div className="bg-neutral-100 px-4 py-10 rounded-md border-l-4 border-orange-400 mt-4">
-								<h1 className="text-xl font-bold">Test</h1>
-								<p className="text-lg text-neutral-400">
-									You've spent $100.00 this month
-								</p>
-							</div>
-						</div>
-					</div>
+                    {isBudgetModalOpen && (
+                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                            <div className="bg-white max-w-4xl w-full px-6 py-10 rounded-md shadow-md">
+                                <h2 className="text-xl font-bold mb-4">Create Budget</h2>
+                                <form onSubmit={handleBudgetSubmit} className="mb-4">
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={newBudget.name}
+                                        onChange={handleBudgetChange}
+                                        placeholder="Budget Name"
+                                        className="border p-2 mr-2 w-full"
+                                        required
+                                    />
+                                    <input
+                                        type="number"
+                                        name="limit"
+                                        value={newBudget.limit}
+                                        onChange={handleBudgetChange}
+                                        placeholder="Budget Limit"
+                                        className="border p-2 mr-2 w-full mt-4"
+                                        required
+                                    />
+                                    <div className="flex justify-end mt-10">
+                                        <button
+                                            type="button"
+                                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2"
+                                            onClick={() => setIsBudgetModalOpen(false)}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button type="submit" className="bg-blue-500 text-white p-2 rounded">Add Budget</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
 				</div>
 
 				{isModalOpen && (
@@ -308,6 +444,7 @@ export default function Dashboard() {
                                     </button>
                                     <button
                                         type="submit"
+                                        onClick={handleConnect}
                                         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                                     >
                                         Connect
