@@ -27,7 +27,13 @@ const runOCR = async () => {
         // Make a request to the OCR endpoint
         const ocrResponse = await axios.post(`https://infer.roboflow.com/doctr/ocr?api_key=${API_KEY}`, data);
         console.log(ocrResponse.data);
-        
+
+        // Extract text from the response using backend API
+        const extractedText = await axios.post('http://localhost:3001/api/ai/ocr-extraction', { ocrResponse });
+        console.log(extractedText.data);
+
+        // TODO: Add transaction to the database
+
     } catch (error) {
         console.error('Error during OCR:', error);
     }
