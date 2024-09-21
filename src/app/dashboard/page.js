@@ -216,6 +216,11 @@ export default function Dashboard() {
 
         const data = await response.json();
         console.log(data);
+
+        // hide the modal
+        setIsModalOpen(false);
+        // reload the page
+        window.location.reload();
     }
 
     return (
