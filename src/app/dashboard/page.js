@@ -18,14 +18,45 @@ export default function Dashboard() {
         'Venmo': { icon: 'fa-link', color: 'bg-blue-400' }
     };
 
-    const transactions = [
-        { name: 'Chipotle', category: 'Food', amount: '$54.00' },
-        { name: 'Parking Lot Z', category: 'Work', amount: '$54.00' },
-        { name: 'Dunkin', category: 'Food/Dining', amount: '$12.00' },
-        { name: 'Chipotle', category: 'Food/Dining', amount: '$54.00' },
-        { name: 'Chipotle', category: 'Food/Dining', amount: '$54.00' },
-        { name: 'VENMO', category: 'Venmo', amount: '$54.00' },
-    ];
+    // const transactions = [
+    //     { name: 'Chipotle', category: 'Food', amount: '$54.00' },
+    //     { name: 'Parking Lot Z', category: 'Work', amount: '$54.00' },
+    //     { name: 'Dunkin', category: 'Food/Dining', amount: '$12.00' },
+    //     { name: 'Chipotle', category: 'Food/Dining', amount: '$54.00' },
+    //     { name: 'Chipotle', category: 'Food/Dining', amount: '$54.00' },
+    //     { name: 'VENMO', category: 'Venmo', amount: '$54.00' },
+    // ];
+
+    const [transactions, setTransactions] = useState([]);
+
+    useEffect(() => {
+        const fetchTransactions = async () => {
+            if (!accountDetails || !accountDetails._id) return;
+
+            try {
+                const response = await fetch('http://localhost:3001/api/transactions/user-transactions', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch transactions');
+                }
+
+                const data = await response.json();
+                setTransactions(data);
+                console.log(data[0]);
+            } catch (error) {
+                console.error('Error fetching transactions:', error);
+            }
+        };
+
+        fetchTransactions();
+    }, [accountDetails]);
+
 
     const generate = async () => {
         console.log('generate');
@@ -216,6 +247,26 @@ export default function Dashboard() {
 
         const data = await response.json();
         console.log(data);
+
+        // Generate random transactions
+        try {
+            const transactionResponse = await fetch('http://localhost:3001/api/users/generate-transactions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!transactionResponse.ok) {
+                throw new Error('Failed to generate transactions');
+            }
+
+            const transactionData = await transactionResponse.json();
+            console.log('Transactions generated:', transactionData);
+        } catch (error) {
+            console.error('Error generating transactions:', error);
+        }
 
         // hide the modal
         setIsModalOpen(false);
