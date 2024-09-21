@@ -1,9 +1,15 @@
 'use client'
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Navigation from '../../components/navigation';
 
 export default function Dashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const router = useRouter();
+
+    const handleSeraAIClick = () => {
+        router.push('/sera-ai');
+    };
 
     const categoryIcons = {
         'Food': { icon: 'fa-utensils', color: 'bg-red-400' },
@@ -76,7 +82,7 @@ export default function Dashboard() {
 
     return (
         <>
-            <Navigation />
+            <Navigation onSeraAIClick={handleSeraAIClick} />
 
             <div className="max-w-7xl mx-auto">
                 <div className="bg-neutral-100 w-full py-10 rounded-md mt-10 px-10 flex">
