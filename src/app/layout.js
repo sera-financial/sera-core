@@ -20,8 +20,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+      <script src="https://kit.fontawesome.com/b6611a44e2.js" crossorigin="anonymous"></script>      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`font-poppins antialiased`}
       >
         {children}
       </body>
