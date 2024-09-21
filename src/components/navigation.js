@@ -4,9 +4,9 @@ import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuIt
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 const navigation = [
-  { name: 'Dashboard', href: '../dashboard', current: true },
-  { name: 'Transactions', href: '../transactions', current: false },
-  { name: 'Budgets', href: '../budgets', current: false },
+  { name: 'Dashboard', href: '../dashboard', current: window.location.pathname === '/dashboard' },
+  { name: 'Transactions', href: '../transactions', current: window.location.pathname === '/transactions' },
+  { name: 'Budgets', href: '../budgets', current: window.location.pathname === '/budgets' },
   { name: 'SeraAI', href: '#', current: false },
 ]
 
