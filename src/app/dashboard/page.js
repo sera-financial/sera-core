@@ -267,7 +267,7 @@ export default function Dashboard() {
 							RECENT TRANSACTIONS
 							<button
 								//onClick={generateFakeTransactions}
-								className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-1 px-2  text-xs rounded-full mb-4 ml-4"
+								className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-1 px-2  text-xs rounded-sm mb-4 ml-4"
 							>
 								Generate?
 							</button>
@@ -310,7 +310,7 @@ export default function Dashboard() {
 						<h1 className='flex'>ENDING BALANCES
                         {balances.length != 0 && (
                                 <button 								onClick={() => setIsModalOpen(true)}
-                                 className='ml-auto text-sm bg-blue-500 hover:bg-blue-700 text-white  py-1 px-2 rounded-full'>Add Account</button>
+                                 className='ml-auto text-sm bg-blue-500 hover:bg-blue-700 text-white  py-1 px-2 rounded-sm'>Add Account</button>
                         )}
                         </h1>
                         {balances.map((account, index) => (
@@ -342,7 +342,7 @@ export default function Dashboard() {
 						<h1 className='flex'>YOUR BUDGETS
                             <button 
                                 onClick={() => setIsBudgetModalOpen(true)} 
-                                className='ml-auto text-sm bg-blue-500 hover:bg-blue-700 text-white py-1 px-2 rounded-full'>
+                                className='ml-auto text-sm bg-blue-500 hover:bg-blue-700 text-white py-1 px-2 rounded-sm'>
                                 Create Budget
                             </button>
                         </h1>
@@ -425,7 +425,7 @@ export default function Dashboard() {
 										Account ID{" "}
 										<button
 											onClick={generate}
-											className="text-xs bg-blue-400 text-white px-2 hover:bg-blue-500 rounded-lg"
+											className="text-xs bg-blue-400 text-white px-2 hover:bg-blue-500 rounded-xs"
 										>
 											Generate?
 										</button>
