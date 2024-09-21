@@ -3,14 +3,14 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Link from 'next/link';
 const LoginPage = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      const response = await axios.post('http://localhost:3001/api/users/login', { username, password });
+      const response = await axios.post('http://localhost:3001/api/users/login', { email, password });
       
       if (response.data.message === 'Logged in successfully') {
         // Store the token in local storage or cookies
@@ -32,11 +32,11 @@ const LoginPage = () => {
         <h2 className="text-2xl font-bold text-left">sera | login</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Username</label>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
               required
             />

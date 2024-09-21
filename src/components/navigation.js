@@ -1,3 +1,5 @@
+'use client'
+import { useState, useEffect } from 'react';
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
@@ -13,6 +15,40 @@ function classNames(...classes) {
 }
 
 export default function Navigation() {
+
+    const [accountDetails, setAccountDetails] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAccountDetails = async () => {
+            try {
+                const response = await fetch(`http://localhost:3001/api/users/account`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                console.log(data);
+                setAccountDetails(data.user); // Ensure this matches the backend response structure
+              
+            } catch (error) {
+                console.error('Error fetching account details:', error);
+            }
+        };
+
+        fetchAccountDetails();
+
+        return () => {
+            setAccountDetails(null);
+        };
+    }, []);
+
   return (
     <Disclosure as="nav" className="bg-gradient-to-r from-blue-400 to-blue-500">
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
@@ -52,16 +88,22 @@ export default function Navigation() {
           
 
             {/* Profile dropdown */}
-            <Menu as="div" className="relative ml-3">
+            {accountDetails && (
+            <p className='text-white text-sm font-bold'>{accountDetails.firstName || ''} {accountDetails.lastName || ''}</p>
+            )
+           }
+           <Menu as="div" className="relative ml-3">
               <div>
                 <MenuButton className="relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
                   <span className="absolute -inset-1.5" />
                   <span className="sr-only">Open user menu</span>
+                  {accountDetails && (
                   <img
                     alt=""
-                    src="https://placehold.co/80x80"
+                    src={`https://ui-avatars.com/api/?name=${accountDetails.firstName || ''} ${accountDetails.lastName || ''}`} 
                     className="h-8 w-8 rounded-full"
                   />
+                  )}
                 </MenuButton>
               </div>
               <MenuItems
@@ -70,7 +112,7 @@ export default function Navigation() {
               >
                
                 <MenuItem>
-                  <a href="#" className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100">
+                  <a href="../login" className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100">
                     Sign out
                   </a>
                 </MenuItem>

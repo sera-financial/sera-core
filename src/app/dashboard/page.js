@@ -1,10 +1,11 @@
 'use client'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navigation from '../../components/navigation';
 
 export default function Dashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
-
+    const [loading, setLoading] = useState(true);
+    const [accountDetails, setAccountDetails] = useState(null);
     const categoryIcons = {
         'Food': { icon: 'fa-utensils', color: 'bg-red-400' },
         'Work': { icon: 'fa-briefcase', color: 'bg-orange-400' },
@@ -32,8 +33,8 @@ export default function Dashboard() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                "first_name": "Demo",
-                "last_name": "Customer",
+                "first_name": accountDetails.firstName,
+                "last_name": accountDetails.lastName,
                     "address": {
                       "street_number": "1",
                       "street_name": "1",
@@ -74,15 +75,71 @@ export default function Dashboard() {
 
     }
 
+
+
+    useEffect(() => {
+        const fetchAccountDetails = async () => {
+            try {
+                const response = await fetch(`http://localhost:3001/api/users/account`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                console.log(data);
+                setAccountDetails(data.user); // Ensure this matches the backend response structure
+                console.log(data.user);
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching account details:', error);
+            }
+        };
+
+        fetchAccountDetails();
+
+        return () => {
+            setAccountDetails(null);
+        };
+    }, []);
+
+    const handleConnect = async () => {
+        let accountId = document.getElementById('account_id').value;
+
+        const response = await fetch(`http://localhost:3001/api/users/account/${accountId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const data = await response.json();
+        console.log(data);
+    }
+
     return (
         <>
             <Navigation />
 
+            {loading ? (
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="spinner-border animate-spin inline-block w-20 h-20 border-4 border-t-blue-500 border-b-blue-500 border-r-transparent border-l-transparent rounded-full" role="status">
+                    </div>
+
+                
+
+                </div>
+            ) : (
             <div className="max-w-7xl mx-auto">
                 <div className="bg-neutral-100 w-full py-10 rounded-md mt-10 px-10 flex">
                     <div>
                         <h1 className="text-4xl text-neutral-600 font-bold ml-2 mt-4">
-                            Welcome back, Pranav.
+                            Welcome back, {accountDetails.firstName}.
                         </h1>
                         <h1 className="text-2xl font-bold text-neutral-400 ml-2">
                             You have some pending tasks.
@@ -220,6 +277,7 @@ export default function Dashboard() {
                     </div>
                 )}
             </div>
+            )}
         </>
     );
 }
