@@ -34,7 +34,7 @@ const Register = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded shadow-md border-t-8 border-blue-500">
-      <h2 className="text-xl  text-left">Welcome to <span className="font-bold">Sera<i className="fa-solid fa-leaf"></i></span></h2>
+      <h2 className="text-xl  text-left">Welcome to <span className="font-bold" onClick={() => window.location.href = '/'}>Sera<i className="fa-solid fa-leaf"></i></span></h2>
       <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
@@ -86,6 +86,10 @@ const Register = () => {
           >
          <i className="fa-solid fa-user-plus"></i> Register
           </button>
+          <br></br>          <br></br>         
+          <a href="/login" className="mt-12">
+            <p className="text-sm text-blue-500">Already have an account?</p>
+          </a>
         </div>
         {message && <p className="mt-4 text-center text-red-500">{message}</p>}
       </div>

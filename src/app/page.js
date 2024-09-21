@@ -1,100 +1,85 @@
 import Image from "next/image";
+import Navigation from "@/components/navigation";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
+    <div className="min-h-screen flex flex-col">
+      <header className="bg-gradient-to-br from-blue-500 to-blue-300 text-white py-20">
+        <div className="container mx-auto text-center">
+          <h1 className="text-5xl font-bold mb-4 text-white">Sera<i className="fa fa-leaf"></i></h1>
+          <p className="text-xl mb-8">
+            Your ultimate financial management tool.
+          </p>
           <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/register"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
+            Get Started
           </a>
         </div>
+      </header>
+      <main className="flex-grow container mx-auto p-8">
+        <section className="mb-16">
+          <h2 className="text-3xl font-bold mb-4">Features</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-lg border-2 border-neutral-100 shadow-lg mx-auto text-center">
+            <i className="fa fa-magnifying-glass bg-blue-500 text-white p-2 rounded-full mb-4"></i>
+
+              <h3 className="text-xl font-bold mb-2">Track Expenses</h3>
+              <p>
+                Easily track your daily expenses and manage your budget
+                effectively.
+              </p>
+            </div>
+            <div className="bg-white p-6 rounded-lg border-2 border-neutral-100 shadow-lg mx-auto text-center">
+              <i className="fa fa-cog bg-blue-500 text-white p-2 rounded-full mb-4"></i>
+              <h3 className="text-xl font-bold mb-2">Set Budgets</h3>
+              <p>
+                Set monthly budgets and get notified when you are close to
+                exceeding them.
+              </p>
+            </div>
+            <div className="bg-white p-6 rounded-lg border-2 border-neutral-100 shadow-lg mx-auto text-center">
+              <i className="fa fa-chart-line bg-blue-500 text-white p-2 rounded-full mb-4"></i>
+              <h3 className="text-xl font-bold mb-2">Financial Insights</h3>
+              <p>
+                Get detailed financial insights and reports to understand your
+                spending habits.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg border-2 border-neutral-100 shadow-lg mx-auto text-center">
+              <i className="fa fa-robot bg-blue-500 text-white p-2 rounded-full mb-4"></i>
+              <h3 className="text-xl font-bold mb-2">AI Assistant</h3>
+              <p>
+                Get personalized financial advice and recommendations based on your spending habits.
+              </p>
+            </div>
+            
+          </div>
+
+          
+        </section>
+    
+        <section className="bg-gradient-to-br from-blue-500 to-blue-300 mx-auto  text-center text-white py-20">
+          <h2 className="text-3xl font-bold mb-4">What are you waiting for?</h2>
+
+          <p className="mb-8 text-lg">
+            Take control of your finances with Sera.
+          </p>
+          <a
+            href="/register"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Sign Up Now
+          </a>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      <footer className="text-black py-8">
+        <div className="container mx-auto text-center">
+          <p>&copy; 2024 Pranav Ramesh, Kshitij Kochhar, Taimur Shaikh, and Yonatan Tussa. All rights reserved.</p>
+          <p className="text-sm">Disclaimer: This is using a mock Capital One API. Please do not use real credit card information.</p>
+        </div>
       </footer>
     </div>
   );

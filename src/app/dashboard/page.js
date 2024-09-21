@@ -178,6 +178,545 @@ export default function Dashboard() {
         }
     }, [accountDetails]);
 
+    const generateFakeTransactions = async () => {
+        // Generate random transactions
+        try {
+            let merchants = [
+                {
+                  "name": "Panera Bread",
+                  "category": "Fast Food",
+                  "address": {
+                    "street_number": "1200",
+                    "street_name": "Liberty Ave",
+                    "city": "Pittsburgh",
+                    "state": "PA",
+                    "zip": "15222"
+                  },
+                  "geocode": {
+                    "lat": 40.4406,
+                    "lng": -79.9959
+                  }
+                },
+                {
+                  "name": "7-Eleven",
+                  "category": "Convenience Store",
+                  "address": {
+                    "street_number": "555",
+                    "street_name": "Mission St",
+                    "city": "San Francisco",
+                    "state": "CA",
+                    "zip": "94105"
+                  },
+                  "geocode": {
+                    "lat": 37.7749,
+                    "lng": -122.4194
+                  }
+                },
+                {
+                  "name": "Lowe's",
+                  "category": "Home Improvement",
+                  "address": {
+                    "street_number": "3000",
+                    "street_name": "South Blvd",
+                    "city": "Charlotte",
+                    "state": "NC",
+                    "zip": "28203"
+                  },
+                  "geocode": {
+                    "lat": 35.2271,
+                    "lng": -80.8431
+                  }
+                },
+                {
+                  "name": "Apple Store",
+                  "category": "Electronics",
+                  "address": {
+                    "street_number": "7000",
+                    "street_name": "Fifth Ave",
+                    "city": "New York",
+                    "state": "NY",
+                    "zip": "10019"
+                  },
+                  "geocode": {
+                    "lat": 40.7128,
+                    "lng": -74.0060
+                  }
+                },
+                {
+                  "name": "Costco",
+                  "category": "Wholesale",
+                  "address": {
+                    "street_number": "123",
+                    "street_name": "Dundee Rd",
+                    "city": "Northbrook",
+                    "state": "IL",
+                    "zip": "60062"
+                  },
+                  "geocode": {
+                    "lat": 42.1275,
+                    "lng": -87.8289
+                  }
+                },
+                {
+                  "name": "Taco Bell",
+                  "category": "Fast Food",
+                  "address": {
+                    "street_number": "200",
+                    "street_name": "South St",
+                    "city": "Houston",
+                    "state": "TX",
+                    "zip": "77002"
+                  },
+                  "geocode": {
+                    "lat": 29.7604,
+                    "lng": -95.3698
+                  }
+                },
+                {
+                  "name": "Kroger",
+                  "category": "Grocery",
+                  "address": {
+                    "street_number": "1500",
+                    "street_name": "Main St",
+                    "city": "Cincinnati",
+                    "state": "OH",
+                    "zip": "45202"
+                  },
+                  "geocode": {
+                    "lat": 39.1031,
+                    "lng": -84.5120
+                  }
+                },
+                {
+                  "name": "CVS",
+                  "category": "Pharmacy",
+                  "address": {
+                    "street_number": "333",
+                    "street_name": "Lexington Ave",
+                    "city": "New York",
+                    "state": "NY",
+                    "zip": "10016"
+                  },
+                  "geocode": {
+                    "lat": 40.7484,
+                    "lng": -73.9857
+                  }
+                },
+                {
+                  "name": "Staples",
+                  "category": "Office Supplies",
+                  "address": {
+                    "street_number": "1100",
+                    "street_name": "Commonwealth Ave",
+                    "city": "Boston",
+                    "state": "MA",
+                    "zip": "02134"
+                  },
+                  "geocode": {
+                    "lat": 42.3601,
+                    "lng": -71.0589
+                  }
+                },
+                {
+                  "name": "Dollar Tree",
+                  "category": "Retail",
+                  "address": {
+                    "street_number": "1200",
+                    "street_name": "Oakland Blvd",
+                    "city": "Fort Worth",
+                    "state": "TX",
+                    "zip": "76103"
+                  },
+                  "geocode": {
+                    "lat": 32.7555,
+                    "lng": -97.3308
+                  }
+                },
+                {
+                  "name": "Subway",
+                  "category": "Fast Food",
+                  "address": {
+                    "street_number": "500",
+                    "street_name": "Mission Blvd",
+                    "city": "Fremont",
+                    "state": "CA",
+                    "zip": "94536"
+                  },
+                  "geocode": {
+                    "lat": 37.5483,
+                    "lng": -121.9886
+                  }
+                },
+                {
+                  "name": "PetSmart",
+                  "category": "Pet Store",
+                  "address": {
+                    "street_number": "800",
+                    "street_name": "Cherry St",
+                    "city": "Kansas City",
+                    "state": "MO",
+                    "zip": "64106"
+                  },
+                  "geocode": {
+                    "lat": 39.0997,
+                    "lng": -94.5786
+                  }
+                },
+                {
+                  "name": "Nike Store",
+                  "category": "Sporting Goods",
+                  "address": {
+                    "street_number": "1000",
+                    "street_name": "Magnolia St",
+                    "city": "Orlando",
+                    "state": "FL",
+                    "zip": "32801"
+                  },
+                  "geocode": {
+                    "lat": 28.5383,
+                    "lng": -81.3792
+                  }
+                },
+                {
+                  "name": "Pizza Hut",
+                  "category": "Fast Food",
+                  "address": {
+                    "street_number": "1300",
+                    "street_name": "Elm St",
+                    "city": "Dallas",
+                    "state": "TX",
+                    "zip": "75201"
+                  },
+                  "geocode": {
+                    "lat": 32.7767,
+                    "lng": -96.7970
+                  }
+                },
+                {
+                  "name": "Walgreens",
+                  "category": "Pharmacy",
+                  "address": {
+                    "street_number": "777",
+                    "street_name": "Broadway",
+                    "city": "Nashville",
+                    "state": "TN",
+                    "zip": "37203"
+                  },
+                  "geocode": {
+                    "lat": 36.1627,
+                    "lng": -86.7816
+                  }
+                },
+                {
+                  "name": "IKEA",
+                  "category": "Furniture",
+                  "address": {
+                    "street_number": "1",
+                    "street_name": "Bluewater Blvd",
+                    "city": "Hyattsville",
+                    "state": "MD",
+                    "zip": "20785"
+                  },
+                  "geocode": {
+                    "lat": 38.9423,
+                    "lng": -76.9125
+                  }
+                },
+                {
+                  "name": "Trader Joe's",
+                  "category": "Grocery",
+                  "address": {
+                    "street_number": "2300",
+                    "street_name": "Vine St",
+                    "city": "Hollywood",
+                    "state": "CA",
+                    "zip": "90068"
+                  },
+                  "geocode": {
+                    "lat": 34.0928,
+                    "lng": -118.3287
+                  }
+                },
+                {
+                  "name": "Chick-fil-A",
+                  "category": "Fast Food",
+                  "address": {
+                    "street_number": "600",
+                    "street_name": "Oak St",
+                    "city": "Little Rock",
+                    "state": "AR",
+                    "zip": "72202"
+                  },
+                  "geocode": {
+                    "lat": 34.7465,
+                    "lng": -92.2896
+                  }
+                },
+                {
+                  "name": "Dick's Sporting Goods",
+                  "category": "Sporting Goods",
+                  "address": {
+                    "street_number": "4500",
+                    "street_name": "Park Rd",
+                    "city": "Buffalo",
+                    "state": "NY",
+                    "zip": "14221"
+                  },
+                  "geocode": {
+                    "lat": 42.8864,
+                    "lng": -78.8784
+                  }
+                },
+                {
+                  "name": "Macy's",
+                  "category": "Department Store",
+                  "address": {
+                    "street_number": "800",
+                    "street_name": "State St",
+                    "city": "New Haven",
+                    "state": "CT",
+                    "zip": "06510"
+                  },
+                  "geocode": {
+                    "lat": 41.3083,
+                    "lng": -72.9279
+                  }
+                },
+                {
+                  "name": "Whole Foods",
+                  "category": "Grocery",
+                  "address": {
+                    "street_number": "3333",
+                    "street_name": "Main St",
+                    "city": "Austin",
+                    "state": "TX",
+                    "zip": "78705"
+                  },
+                  "geocode": {
+                    "lat": 30.2672,
+                    "lng": -97.7431
+                  }
+                },
+                {
+                  "name": "GameStop",
+                  "category": "Electronics",
+                  "address": {
+                    "street_number": "1212",
+                    "street_name": "Broadway Ave",
+                    "city": "Cleveland",
+                    "state": "OH",
+                    "zip": "44115"
+                  },
+                  "geocode": {
+                    "lat": 41.4993,
+                    "lng": -81.6944
+                  }
+                },
+                {
+                  "name": "Barnes & Noble",
+                  "category": "Books",
+                  "address": {
+                    "street_number": "450",
+                    "street_name": "Lexington Ave",
+                    "city": "New York",
+                    "state": "NY",
+                    "zip": "10017"
+                  },
+                  "geocode": {
+                    "lat": 40.7527,
+                    "lng": -73.9772
+                  }
+                },
+                {
+                  "name": "Panda Express",
+                  "category": "Fast Food",
+                  "address": {
+                    "street_number": "2800",
+                    "street_name": "Mission St",
+                    "city": "San Francisco",
+                    "state": "CA",
+                    "zip": "94110"
+                  },
+                  "geocode": {
+                    "lat": 37.7749,
+                    "lng": -122.4194
+                  }
+                },
+                {
+                  "name": "Sephora",
+                  "category": "Beauty",
+                  "address": {
+                    "street_number": "120",
+                    "street_name": "Boylston St",
+                    "city": "Boston",
+                    "state": "MA",
+                    "zip": "02116"
+                  },
+                  "geocode": {
+                    "lat": 42.3542,
+                    "lng": -71.0691
+                  }
+                },
+                {
+                  "name": "Bath & Body Works",
+                  "category": "Beauty",
+                  "address": {
+                    "street_number": "987",
+                    "street_name": "Magnolia St",
+                    "city": "Anaheim",
+                    "state": "CA",
+                    "zip": "92801"
+                  },
+                  "geocode": {
+                    "lat": 33.8366,
+                    "lng": -117.9143
+                  }
+                },
+                {
+                  "name": "The Home Depot",
+                  "category": "Home Improvement",
+                  "address": {
+                    "street_number": "2100",
+                    "street_name": "El Camino Real",
+                    "city": "Redwood City",
+                    "state": "CA",
+                    "zip": "94063"
+                  },
+                  "geocode": {
+                    "lat": 37.4848,
+                    "lng": -122.2281
+                  }
+                },
+                {
+                  "name": "Staples",
+                  "category": "Office Supplies",
+                  "address": {
+                    "street_number": "500",
+                    "street_name": "1st St",
+                    "city": "San Jose",
+                    "state": "CA",
+                    "zip": "95112"
+                  },
+                  "geocode": {
+                    "lat": 37.3382,
+                    "lng": -121.8863
+                  }
+                },
+                {
+                  "name": "Bed Bath & Beyond",
+                  "category": "Retail",
+                  "address": {
+                    "street_number": "222",
+                    "street_name": "River Rd",
+                    "city": "Edgewater",
+                    "state": "NJ",
+                    "zip": "07020"
+                  },
+                  "geocode": {
+                    "lat": 40.8271,
+                    "lng": -73.9752
+                  }
+                },
+                {
+                  "name": "Outback Steakhouse",
+                  "category": "Restaurant",
+                  "address": {
+                    "street_number": "1400",
+                    "street_name": "Willowbrook Mall",
+                    "city": "Wayne",
+                    "state": "NJ",
+                    "zip": "07470"
+                  },
+                  "geocode": {
+                    "lat": 40.9170,
+                    "lng": -74.2515
+                  }
+                },
+                {
+                  "name": "Wendy's",
+                  "category": "Fast Food",
+                  "address": {
+                    "street_number": "690",
+                    "street_name": "Main St",
+                    "city": "Richmond",
+                    "state": "VA",
+                    "zip": "23219"
+                  },
+                  "geocode": {
+                    "lat": 37.5407,
+                    "lng": -77.4360
+                  }
+                },
+                {
+                  "name": "Microsoft Store",
+                  "category": "Electronics",
+                  "address": {
+                    "street_number": "3000",
+                    "street_name": "Las Vegas Blvd",
+                    "city": "Las Vegas",
+                    "state": "NV",
+                    "zip": "89109"
+                  },
+                  "geocode": {
+                    "lat": 36.1699,
+                    "lng": -115.1398
+                  }
+                },
+                {
+                  "name": "CVS",
+                  "category": "Pharmacy",
+                  "address": {
+                    "street_number": "1200",
+                    "street_name": "Broadway Ave",
+                    "city": "Boulder",
+                    "state": "CO",
+                    "zip": "80302"
+                  },
+                  "geocode": {
+                    "lat": 40.0150,
+                    "lng": -105.2705
+                  }
+                },
+                {
+                  "name": "Best Buy",
+                  "category": "Electronics",
+                  "address": {
+                    "street_number": "1600",
+                    "street_name": "Galleria Blvd",
+                    "city": "Roseville",
+                    "state": "CA",
+                    "zip": "95678"
+                  },
+                  "geocode": {
+                    "lat": 38.7521,
+                    "lng": -121.2880
+                  }
+                }
+            ];
+
+            for (const merchant of merchants) {
+                console.log('Generating merchant:', merchant.name);
+                const transactionResponse = await fetch('http://api.nessieisreal.com/merchants?key=575fbd2b0728ae7c870640023404c388', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(merchant)
+                });
+
+                if (!transactionResponse.ok) {
+                    throw new Error(`Failed to generate merchant: ${merchant.name}`);
+                }
+
+                console.log('Merchant generated:', merchant.name);
+
+                
+            }
+        } catch (error) {
+            console.error('Error generating merchant:', error);
+        }
+    };
+
     // Fetch budgets
     useEffect(() => {
         const fetchBudgets = async () => {
@@ -248,25 +787,6 @@ export default function Dashboard() {
         const data = await response.json();
         console.log(data);
 
-        // Generate random transactions
-        try {
-            const transactionResponse = await fetch('http://localhost:3001/api/users/generate-transactions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!transactionResponse.ok) {
-                throw new Error('Failed to generate transactions');
-            }
-
-            const transactionData = await transactionResponse.json();
-            console.log('Transactions generated:', transactionData);
-        } catch (error) {
-            console.error('Error generating transactions:', error);
-        }
 
         // hide the modal
         setIsModalOpen(false);
@@ -317,7 +837,7 @@ export default function Dashboard() {
 						<h1>
 							RECENT TRANSACTIONS
 							<button
-								//onClick={generateFakeTransactions}
+								onClick={generateFakeTransactions}
 								className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-1 px-2  text-xs rounded-sm mb-4 ml-4"
 							>
 								Generate?
