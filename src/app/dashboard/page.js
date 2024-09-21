@@ -1,11 +1,17 @@
 'use client'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '../../components/navigation';
 
 export default function Dashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const router = useRouter();
+    const [transactions, setTransactions] = useState([]);
+    const [accountId, setAccountId] = useState('');
+
+    useEffect(() => {
+        generateFakeTransactions();
+    }, []);
 
     const handleSeraAIClick = () => {
         router.push('/sera-ai');
@@ -18,14 +24,72 @@ export default function Dashboard() {
         'Venmo': { icon: 'fa-link', color: 'bg-blue-400' }
     };
 
-    const transactions = [
-        { name: 'Chipotle', category: 'Food', amount: '$54.00' },
-        { name: 'Parking Lot Z', category: 'Work', amount: '$54.00' },
-        { name: 'Dunkin', category: 'Food/Dining', amount: '$12.00' },
-        { name: 'Chipotle', category: 'Food/Dining', amount: '$54.00' },
-        { name: 'Chipotle', category: 'Food/Dining', amount: '$54.00' },
-        { name: 'VENMO', category: 'Venmo', amount: '$54.00' },
-    ];
+    const generateFakeTransactions = async () => {
+        if (!accountId) {
+            console.error('No account ID provided');
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://api.nessieisreal.com/accounts/${accountId}/purchases?key=575fbd2b0728ae7c870640023404c388`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    merchant_id: '57cf75cea73e494d8675ec49',
+                    medium: 'balance',
+                    purchase_date: new Date().toISOString(),
+                    amount: Math.floor(Math.random() * 10000) / 100,
+                    description: 'Fake',
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create fake transaction');
+            }
+
+            const data = await response.json();
+            console.log('Fake transaction created:', data);
+
+            // Fetch and update transactions
+            await fetchTransactions(accountId);
+        } catch (error) {
+            console.error('Error generating fake transaction:', error);
+        }
+    };
+
+    const fetchTransactions = async (accountId) => {
+        try {
+            const response = await fetch(`http://api.nessieisreal.com/accounts/${accountId}/purchases?key=575fbd2b0728ae7c870640023404c388`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch transactions');
+            }
+            const data = await response.json();
+            const formattedTransactions = data.map(t => ({
+                name: t.description,
+                status: t.status,
+                category: getCategoryFromDescription(t.description),
+                amount: `$${t.amount.toFixed(2)}`,
+            }));
+            setTransactions(formattedTransactions);
+        } catch (error) {
+            console.error('Error fetching transactions:', error);
+        }
+    };
+
+    const getCategoryFromDescription = (description) => {
+        // Simple logic to assign categories based on description
+        if (description.toLowerCase().includes('food') || description.toLowerCase().includes('restaurant')) {
+            return 'Food/Dining';
+        } else if (description.toLowerCase().includes('work')) {
+            return 'Work';
+        } else if (description.toLowerCase().includes('venmo')) {
+            return 'Venmo';
+        } else {
+            return 'Other';
+        }
+    };
 
     const generate = async () => {
         console.log('generate');
@@ -75,8 +139,8 @@ export default function Dashboard() {
         const data = await response.json();
 
         document.getElementById('account_id').value = data.objectCreated._id;
-
-
+        setAccountId(data.objectCreated._id);
+        console.log(accountId);
 
     }
 
@@ -110,6 +174,12 @@ export default function Dashboard() {
                 <div className="grid grid-cols-3 gap-4 gap-y-20 mt-10">
                     <div className="col-span-2">
                         <h1>RECENT TRANSACTIONS</h1>
+                        <button
+                            onClick={generateFakeTransactions}
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
+                        >
+                            Generate Fake Transaction
+                        </button>
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b">
@@ -122,13 +192,14 @@ export default function Dashboard() {
                                 {transactions.map((transaction, index) => (
                                     <tr key={index} className="border-b">
                                         <td className="py-2 uppercase">{transaction.name}</td>
-                                        <td className="py-2">
-                                            {transaction.category && (
+                                        <td className="py-2 uppercase">
+                                            {transaction.status}
+                                            {/* {transaction.category && (
                                                 <div className={`text-white  w-fit px-2 py-1 rounded flex items-center ${categoryIcons[transaction.category].color}`}>
                                                     <i className={`fa ${categoryIcons[transaction.category].icon} mr-2`}></i>
                                                     {transaction.category}
                                                 </div>
-                                            )}
+                                            )} */}
                                         </td>
                                         <td className="py-2">{transaction.amount}</td>
                                     </tr>
