@@ -11,7 +11,7 @@ export default function TransactionsPage() {
   const [qrCodeData, setQrCodeData] = useState('');
   const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
   const [ocrResult, setOcrResult] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = () => setIsModalOpen(true);
@@ -53,9 +53,48 @@ export default function TransactionsPage() {
         }
 
         const data = await response.json();
-        setTransactions(data);
+        console.log('Fetched transactions:', data);
+
+        const descriptions = data.map(transaction => transaction.description);
+        console.log('Transaction descriptions:', descriptions);
+
+        const classificationResponse = await fetch('http://localhost:3001/api/ai/merchant-classification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ messages: descriptions }),
+        });
+
+        if (!classificationResponse.ok) {
+          throw new Error('Classification response was not ok');
+        }
+
+        const classificationData = await classificationResponse.json();
+        console.log('Classification data:', classificationData);
+
+        const categories = JSON.parse(classificationData.choices[0].message.content);
+        console.log('Parsed categories:', categories);
+
+        const vendorCategoryMap = {};
+        categories.forEach(category => {
+          category.vendors.forEach(vendor => {
+            vendorCategoryMap[vendor] = category.category;
+          });
+        });
+        console.log('Vendor-Category Map:', vendorCategoryMap);
+
+        const classifiedTransactions = data.map(transaction => ({
+          ...transaction,
+          category: vendorCategoryMap[transaction.description] || 'Unknown',
+        }));
+
+        console.log('Classified transactions:', classifiedTransactions);
+
+        setTransactions(classifiedTransactions);
         setLoading(false);
       } catch (error) {
+        console.log('Error fetching transactions:', error);
         console.error('Error fetching transactions:', error);
       }
     };
@@ -136,6 +175,7 @@ export default function TransactionsPage() {
             {loading ? (
               <div className="flex items-center justify-center min-h-screen">
                 <div className="spinner-border animate-spin inline-block w-20 h-20 border-4 border-t-blue-500 border-b-blue-500 border-r-transparent border-l-transparent rounded-full" role="status"></div>
+                <p className="text-xl ml-4">Classifying transactions...</p>
               </div>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
@@ -149,6 +189,7 @@ export default function TransactionsPage() {
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Amount
+                      
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Date
@@ -159,11 +200,7 @@ export default function TransactionsPage() {
                   {transactions.map((transaction) => (
                     <tr key={transaction._id}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {transaction.type === 'expense' ? (
-                          <ArrowDownIcon className="h-5 w-5 text-red-500" />
-                        ) : (
-                          <ArrowUpIcon className="h-5 w-5 text-green-500" />
-                        )}
+                       
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{transaction.description}</div>

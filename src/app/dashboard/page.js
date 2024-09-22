@@ -12,6 +12,7 @@ export default function Dashboard() {
     const [budgets, setBudgets] = useState([]);
     const [newBudget, setNewBudget] = useState({ name: '', limit: '' });
     const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+    const [syncedTransactions, setSyncedTransactions] = useState(null);
     const categoryIcons = {
         'Food': { icon: 'fa-utensils', color: 'bg-red-400' },
         'Work': { icon: 'fa-briefcase', color: 'bg-orange-400' },
@@ -32,6 +33,7 @@ export default function Dashboard() {
     const [bills, setBills] = useState([]);
     const [showAllTransactions, setShowAllTransactions] = useState(false);
     const [showAllBills, setShowAllBills] = useState(false);
+    const [progress, setProgress] = useState(0);
 
    
 
@@ -121,17 +123,21 @@ export default function Dashboard() {
                         "Content-Type": "application/json",
                     }
                 });
+
+                // add each transaction to the transactions array
+                const transactionsData = await transactionsResponse.json();
+                transactionsData.forEach(transaction => {
+                    transactions.push(transaction);
+                });
     
                 if (!transactionsResponse.ok) {
                     throw new Error('Network response was not ok');
                 }
     
-                const transactionsData = await transactionsResponse.json();
-                console.log("transactions", transactionsData);
-    
+                
                 // store transactions in state
                 setTransactions(transactionsData);
-
+                setSyncedTransactions(transactionsData); // Add this line to set synced transactions
 
                 console.log(data.user);
                 setLoading(false);
@@ -695,7 +701,10 @@ export default function Dashboard() {
                 }
               ]
               
-    
+              
+            const totalMerchants = merchants.length;
+            let completedMerchants = 0;
+
             for (const merchant of merchants) {
                 console.log('Generating merchant:', merchant.name);
                 const transactionResponse = await fetch('http://api.nessieisreal.com/merchants?key=575fbd2b0728ae7c870640023404c388', {
@@ -711,13 +720,19 @@ export default function Dashboard() {
                 }
     
                 const transactionData = await transactionResponse.json();
+                console.log(transactionData);
                 merchant._id = transactionData.objectCreated._id;
                 console.log('Merchant generated:', merchant.name, 'with ID:', merchant._id);
+
+                completedMerchants++;
+                setProgress((completedMerchants / totalMerchants) * 100);
             }
     
             // Create mock transactions
             const accountId = accountDetails.accountId[0]; // Replace with actual account ID
             for (const merchant of merchants) {
+              setVerboseProgress(`${completedMerchants} / ${totalMerchants} merchants generated`);
+
                 const purchase = {
                     merchant_id: merchant._id,
                     medium: "balance",
@@ -738,14 +753,19 @@ export default function Dashboard() {
                 if (!purchaseResponse.ok) {
                     throw new Error(`Failed to create purchase for merchant: ${merchant.name}`);
                 }
-    
+                
+                
+
                 console.log('Purchase created for merchant:', merchant.name);
             }
+
+            window.location.reload();
         } catch (error) {
             console.error('Error generating merchants or purchases:', error);
         }
     };
 
+    const [verboseProgress, setVerboseProgress] = useState('');
     // Fetch budgets
     useEffect(() => {
         const fetchBudgets = async () => {
@@ -890,12 +910,29 @@ export default function Dashboard() {
     const displayedTransactions = showAllTransactions ? transactions : transactions.slice(0, 10);
     const displayedBills = showAllBills ? bills : bills.slice(0, 10);
 
+    const syncAccount = async () => {
+        const response = await fetch(`http://localhost:3001/api/transactions/sync`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(syncedTransactions)
+        });
+        const data = await response.json();
+        console.log(data);
+        
+    }
+    
+
+
     return (
         <>
             <Navigation />
 
             {loading ? (
+     
                 <div className="flex items-center justify-center min-h-screen">
+
                     <div className="spinner-border animate-spin inline-block w-20 h-20 border-4 border-t-blue-500 border-b-blue-500 border-r-transparent border-l-transparent rounded-full" role="status">
                     </div>
 
@@ -932,13 +969,27 @@ export default function Dashboard() {
 					<div className="col-span-2">
 						<h1 className="flex items-center">
 							RECENT TRANSACTIONS
-							<button
+              <button
 								onClick={generateFakeTransactions}
-								className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-1 px-2 text-xs rounded-sm mb-4 ml-4"
+								className="ml-auto bg-neutral-500 hover:bg-neutral-700 text-white py-1 px-2 text-xs rounded-sm mb-4 ml-4"
 							>
-								Generate?
+							<i className="fa-solid fa-plus"></i>	Generate Transactions
+							</button>
+              <button
+								onClick={syncAccount}
+								className="ml-2 bg-neutral-500 hover:bg-neutral-700 text-white py-1 px-2 text-xs rounded-sm mb-4 "
+							>
+							<i className="fa-solid fa-sync"></i>	Sync Account
 							</button>
 						</h1>
+            <span className="text-sm text-neutral-400">
+              {verboseProgress}
+              </span>
+            {progress > 0 && (
+                            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                            </div>
+                        )}
 						<table className="w-full text-left">
 							<thead>
 								<tr className="border-b">
@@ -968,28 +1019,76 @@ export default function Dashboard() {
 							</tbody>
 						</table>
 						{transactions.length > 10 && (
-							<div className="mt-4 text-center">
+							<div className="mt-2 text-left">
 								<button
 									onClick={() => setShowAllTransactions(!showAllTransactions)}
-									className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+									className="bg-blue-500 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded"
 								>
 									{showAllTransactions ? "Show Less" : "Show All Transactions"}
 								</button>
 							</div>
 						)}
+
+
+<div className="col-span-4 mt-10">
+                        <h1 className='flex'>
+                            YOUR BILLS
+                            <button 
+                                onClick={generateMockBills} 
+                                className='ml-auto text-sm bg-gray-500 hover:bg-gray-700 text-white text-xs py-1 px-2 rounded-sm'
+                            >
+                            <i className="fa-solid fa-plus"></i>	Generate Mock Bills
+                            </button>
+                        </h1>
+                        <div className="mt-4">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b">
+                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Payee</th>
+                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Due Date</th>
+                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Amount</th>
+                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {displayedBills.map((bill, index) => (
+                                        <tr key={index} className="border-b">
+                                            <td className="py-2">{bill.payee}</td>
+                                            <td className="py-2">{new Date(bill.payment_date).toLocaleDateString()}</td>
+                                            <td className="py-2">${bill.payment_amount.toFixed(2)}</td>
+                                            <td className="py-2 capitalize">{bill.status}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {bills.length > 10 && (
+                                <div className="mt-4 ">
+                                    <button
+                                        onClick={() => setShowAllBills(!showAllBills)}
+                                        className="bg-blue-500 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded"
+                                    >
+                                        {showAllBills ? "Show Less" : "Show All Bills"}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <br></br>  <br></br>  <br></br>  <br></br>
+
 					</div>
 
-					<div className="col-span-1">
+					<div className="col-span-1 border-l-2 border-neutral-100 pl-4">
 						<h1 className='flex'>ENDING BALANCES
                         {balances.length != 0 && (
                                 <button 								onClick={() => setIsModalOpen(true)}
-                                 className='ml-auto text-sm bg-blue-500 hover:bg-blue-700 text-white  py-1 px-2 rounded-sm'>Add Account</button>
+                                 className='ml-auto text-xs bg-neutral-500 hover:bg-neutral-700  text-white  py-1 px-2 rounded-sm'><i className="fa-solid fa-plus"></i>	Add Account</button>
                         )}
                         </h1>
                         {balances.map((account, index) => (
                             <div key={index} className="bg-neutral-100 shadow-md rounded-sm mt-4 p-4 mb-4">
                                 <p className="text-md text-neutral-400 truncate">{account.type.toUpperCase()} {account.nickname}</p>
-                                <p className="text-xl text-green-500 ">
+                                <p className="text-2xl text-green-500 font-bold ">
                                     ${account.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
                                 <p className="text-sm text-gray-500 hidden">Rewards: {account.rewards}</p>
@@ -1009,32 +1108,31 @@ export default function Dashboard() {
                                 </button>
                             </div>
                         )}
-					</div>
 
-					<div className="col-span-4">
-						<h1 className='flex'>YOUR BUDGETS
+<div className="col-span-4 mt-10 border-t-2 border-neutral-100 ">
+						<h1 className='flex mt-4  '>YOUR BUDGETS
                             <button 
                                 onClick={() => setIsBudgetModalOpen(true)} 
-                                className='ml-auto text-sm bg-blue-500 hover:bg-blue-700 text-white py-1 px-2 rounded-sm'>
-                                Create Budget
+                                className='ml-auto text-xs bg-gray-500 hover:bg-gray-700 text-white py-1 px-2 rounded-sm'>
+                              <i className="fa-solid fa-plus"></i> Create Budget
                             </button>
                         </h1>
-                        <div className="grid grid-cols-3 gap-4 gap-y-10">
+                        <div className="grid grid-cols-1 gap-4 gap-y-10 ">
                             {budgets.map((budget, index) => (
-                                <div key={index} className="bg-neutral-100 px-4 py-10 rounded-md border-l-4 border-blue-400 mt-4">
-                                    <h1 className="text-xl font-bold">{budget.name}</h1>
-                                    <p className="text-lg text-neutral-400">
-                                        Limit: ${budget.limit}
+                                <div key={index} className="bg-neutral-100 px-4 py-4 rounded-md border-l-4 border-blue-400 mt-4">
+                                    <h1 className="text-lgfont-semibold">{budget.name}</h1>
+                                    <p className="text-md text-neutral-400">
+                                    ${budget.spent}/${budget.limit}
                                     </p>
-                                    <p className="text-lg text-neutral-400">
-                                        Spent: ${budget.spent}
-                                    </p>
+                                 
                                 </div>
                             ))}
                         </div>
 
-                        <br></br>             <br></br>             <br></br>             <br></br>
                     </div>
+					</div>
+
+		
 
                     {isBudgetModalOpen && (
                         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -1074,49 +1172,6 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    <div className="col-span-4 mt-10">
-                        <h1 className='flex'>
-                            YOUR BILLS
-                            <button 
-                                onClick={generateMockBills} 
-                                className='ml-auto text-sm bg-blue-500 hover:bg-blue-700 text-white py-1 px-2 rounded-sm'
-                            >
-                                Generate Mock Bills
-                            </button>
-                        </h1>
-                        <div className="mt-4">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Payee</th>
-                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Due Date</th>
-                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Amount</th>
-                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {displayedBills.map((bill, index) => (
-                                        <tr key={index} className="border-b">
-                                            <td className="py-2">{bill.payee}</td>
-                                            <td className="py-2">{new Date(bill.payment_date).toLocaleDateString()}</td>
-                                            <td className="py-2">${bill.payment_amount.toFixed(2)}</td>
-                                            <td className="py-2 capitalize">{bill.status}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            {bills.length > 10 && (
-                                <div className="mt-4 text-center">
-                                    <button
-                                        onClick={() => setShowAllBills(!showAllBills)}
-                                        className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
-                                    >
-                                        {showAllBills ? "Show Less" : "Show All Bills"}
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
 
                     {isModalOpen && (
                         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -1141,7 +1196,7 @@ export default function Dashboard() {
                                             Account ID{" "}
                                             <button
                                                 onClick={generate}
-                                                className="text-xs bg-blue-400 text-white px-2 hover:bg-blue-500 rounded-xs"
+                                                className="text-xs bg-neutral-500 text-white px-2 hover:bg-neutral-600 rounded-xs"
                                             >
                                                 Generate?
                                             </button>
@@ -1229,7 +1284,10 @@ export default function Dashboard() {
                                     >
                                         Connect
                                     </button>
+
+
                                 </div>
+                                
                             </div>
                         </div>
                     </div>
