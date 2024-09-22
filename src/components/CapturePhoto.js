@@ -11,12 +11,21 @@ export default function CapturePhoto() {
   const { id } = useParams();
 
   useEffect(() => {
-    startCamera();
+    requestCameraPermission();
   }, []);
 
-  const startCamera = async () => {
+  const requestCameraPermission = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      startCamera(stream);
+    } catch (err) {
+      console.error("Error requesting camera permission:", err);
+      setUploadStatus('Error requesting camera permission. Please ensure you have given permission.');
+    }
+  };
+
+  const startCamera = (stream) => {
+    try {
       videoRef.current.srcObject = stream;
     } catch (err) {
       console.error("Error accessing camera:", err);
@@ -40,7 +49,7 @@ export default function CapturePhoto() {
 
     setUploading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/upload/${id}`, {
+      const response = await fetch(`http://100.94.213.94:3001/upload/${id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -32,6 +32,7 @@
     "@react-stately/datepicker": "^3.10.2",
     "@tremor/react": "^3.18.2",
     "axios": "^1.7.7",
+    "child_process": "^1.0.2",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",
     "faker": "^6.6.6",
@@ -43,7 +44,8 @@
     "react": "^18",
     "react-day-picker": "8.10.1",
     "react-dom": "^18",
-    "recharts": "^2.12.7"
+    "recharts": "^2.12.7",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "postcss": "^8",

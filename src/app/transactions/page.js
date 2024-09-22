@@ -11,6 +11,11 @@ export default function TransactionsPage() {
   const [qrCodeData, setQrCodeData] = useState('');
   const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
   const [ocrResult, setOcrResult] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
 
   useEffect(() => {
     const fetchAccountId = async () => {
@@ -102,16 +107,17 @@ export default function TransactionsPage() {
     const uniqueId = await generateQRCode();
     
     // Create the full URL for the upload page
-    const uploadUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/upload/${uniqueId}`;
+    const uploadUrl = `http://100.94.213.94:3000/upload/${uniqueId}`;
     console.log('QR Code URL:', uploadUrl); // Add this line
     
     // Generate QR code with the full URL
     const qr = await QRCode.toDataURL(uploadUrl);
     setQrCodeData(qr);
+    openModal();
     
-    const uploadListener = setInterval(() => {
-      checkForUpload(uniqueId);
-    }, 5000); // Check every 5 seconds
+    // const uploadListener = setInterval(() => {
+    //   checkForUpload(uniqueId);
+    // }, 5000); // Check every 5 seconds
 
     // Clear the listener after 5 minutes to prevent indefinite checking
     setTimeout(() => {
@@ -119,9 +125,6 @@ export default function TransactionsPage() {
       console.log('QR code expired');
     }, 5 * 60 * 1000);
   }
-
-  // Call this function when you want to start the handoff process
-  // setupHandoff();
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -180,7 +183,6 @@ export default function TransactionsPage() {
             )}
           </div>
 
-          {/* QR Code Section (moved below the table) */}
           <div className="mt-6">
             <button
               onClick={setupHandoff}
@@ -189,28 +191,46 @@ export default function TransactionsPage() {
               <PlusIcon className="h-5 w-5 mr-2" />
               Upload a Receipt
             </button>
-            {qrCodeData && (
-              <div className="mt-4">
-                <img src={qrCodeData} alt="QR Code" />
-              </div>
-            )}
-            {uploadedImageUrl && (
-              <div className="mt-4">
-                <h2 className="text-xl font-bold">Uploaded Receipt:</h2>
-                <img src={uploadedImageUrl} alt="Uploaded Receipt" className="mt-2 max-w-md" />
-              </div>
-            )}
-            {ocrResult && (
-              <div className="mt-4">
-                <h2 className="text-xl font-bold">OCR Result:</h2>
-                <pre className="mt-2 bg-gray-100 p-4 rounded overflow-auto">
-                  {JSON.stringify(ocrResult, null, 2)}
-                </pre>
-              </div>
-            )}
           </div>
         </div>
       </main>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="modal-overlay absolute inset-0 bg-black opacity-50"></div>
+          <div className="modal-container bg-white md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto">
+            <div className="modal-content py-4 text-center mx-auto px-6 ">
+              <div className="flex justify-end">
+                <button onClick={closeModal} className="modal-close">
+                  <svg className="fill-current text-black" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+                    <path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path>
+                  </svg>
+                </button>
+              </div>
+              {qrCodeData && (
+                <div className="mt-4 mx-auto text-center">
+                  <p>Scan your receipt to upload</p>
+                  <img src={qrCodeData} alt="QR Code" className="mx-auto w-full border-2 border-gray-300 rounded-md" />
+                </div>
+              )}
+              {uploadedImageUrl && (
+                <div className="mt-4">
+                  <h2 className="text-xl font-bold">Uploaded Receipt:</h2>
+                  <img src={uploadedImageUrl} alt="Uploaded Receipt" className="mt-2 max-w-md" />
+                </div>
+              )}
+              {ocrResult && (
+                <div className="mt-4">
+                  <h2 className="text-xl font-bold">OCR Result:</h2>
+                  <pre className="mt-2 bg-gray-100 p-4 rounded overflow-auto">
+                    {JSON.stringify(ocrResult, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
