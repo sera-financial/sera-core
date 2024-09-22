@@ -8,60 +8,52 @@ export default function ChatbotUI() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (input.trim()) {
-      setMessages(prevMessages => [...prevMessages, { text: input, sender: 'user' }]);
-      setInput('');
+    if (!input.trim()) return;
 
-      // Add an initial AI message that will be updated
-      setMessages(prevMessages => [...prevMessages, { text: '', sender: 'ai', isStreaming: true }]);
+    setMessages(prev => [...prev, { text: input, sender: 'user' }, { text: '', sender: 'ai', isStreaming: true }]);
+    setInput('');
 
-      try {
-        const response = await fetch('http://localhost:3001/api/ai/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ message: input })
-        });
+    try {
+      const response = await fetch('http://localhost:3001/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: input })
+      });
 
-        if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) throw new Error('Network response was not ok');
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let aiResponse = '';
+      console.log('Response received:', response);
+      const data = JSON.parse(await response.json());
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+      const userId = (await fetch('http://localhost:3001/api/users/account', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      }).then(res => res.json())).user._id;
 
-          const chunk = decoder.decode(value, { stream: true });
-          aiResponse += chunk;
+      const content = data?.content;
+      console.log("The content is: ", content);
+      for (let i = 0; i < data?.type?.length; i++) {
+        const action = data.type[i];
 
-          // Update the AI's response in real-time
-          setMessages(prevMessages => {
-            const newMessages = [...prevMessages];
-            const lastMessage = newMessages[newMessages.length - 1];
-            if (lastMessage.sender === 'ai' && lastMessage.isStreaming) {
-              lastMessage.text = aiResponse;
-            }
-            return newMessages;
-          });
+        switch (action) {
+          case 'text':
+            await streamContent(content, setMessages);
+            break;
+          case 'updateBudget':
+            await updateBudget(userId, content, setMessages);
+            break;
+          case 'addTransaction':
+            await addTransaction(userId, content, setMessages);
+            break;
+          case 'reviewSpending':
+            await reviewSpending(userId, content, setMessages);
+            break;
+          default:
+            console.log('Unhandled action type:', action);
         }
-
-        // Mark the message as no longer streaming
-        setMessages(prevMessages => {
-          const newMessages = [...prevMessages];
-          const lastMessage = newMessages[newMessages.length - 1];
-          if (lastMessage.sender === 'ai' && lastMessage.isStreaming) {
-            lastMessage.isStreaming = false;
-          }
-          return newMessages;
-        });
-
-      } catch (error) {
-        console.error('Error:', error);
-        setMessages(prevMessages => [...prevMessages, { text: "Sorry, I couldn't process that request.", sender: 'ai' }]);
       }
+    } catch (error) {
+      console.error('Error:', error);
+      setMessages(prev => [...prev, { text: "Sorry, I couldn't process that request.", sender: 'ai' }]);
     }
   };
 
@@ -87,4 +79,120 @@ export default function ChatbotUI() {
       </form>
     </div>
   );
+}
+
+async function streamContent(content, setMessages) {
+  let streamedContent = '';
+  for (let i = 0; i < content.length; i++) {
+    streamedContent += content[i];
+    await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 16) + 5));
+    setMessages(prev => {
+      const updated = [...prev];
+      updated[updated.length - 1] = {
+        ...updated[updated.length - 1],
+        text: streamedContent,
+        isStreaming: i < content.length - 1
+      };
+      return updated;
+    });
+  }
+}
+
+async function updateBudget(userId, content, setMessages) {
+  const { value, category } = content;
+  const budgetData = await fetch(`http://localhost:3001/api/budgets/${userId}`, {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+  }).then(res => res.json());
+
+  const budgetId = budgetData.find(budget => budget.name.toLowerCase() === category.toLowerCase())?._id;
+
+  try {
+    const updateResponse = await fetch(`http://localhost:3001/api/budgets/update/${userId}/${budgetId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ limit: Number(value) })
+    });
+
+    if (!updateResponse.ok) throw new Error('Failed to update budget');
+
+    setMessages(prev => [...prev, { text: `Budget updated: ${category} - $${value}`, sender: 'ai' }]);
+  } catch (error) {
+    console.error('Error updating budget:', error);
+    setMessages(prev => [...prev, { text: "Sorry, I couldn't update the budget. Please try again later.", sender: 'ai' }]);
+  }
+}
+
+async function addTransaction(userId, content, setMessages) {
+  const { value, merchant_name, purchase_date, description } = content;
+
+  console.log('Starting addTransaction function');
+  console.log('Received parameters:', { userId, value, merchant_name, purchase_date, description });
+
+  try {
+    // Use CapitalOneAPI to create a merchant and get the merchant_id
+    console.log('Attempting to generate merchant:', merchant_name);
+    const merchantResponse = await fetch('http://api.nessieisreal.com/merchants?key=575fbd2b0728ae7c870640023404c388', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({name: merchant_name})
+    });
+
+    console.log('Merchant API response status:', merchantResponse.status);
+
+    if (!merchantResponse.ok) {
+        console.error('Failed to generate merchant. Status:', merchantResponse.status);
+        throw new Error(`Failed to generate merchant: ${merchant_name}`);
+    }
+
+    const merchantData = await merchantResponse.json();
+    console.log('Merchant data received:', merchantData);
+    const merchant_id = merchantData.objectCreated._id;
+    console.log('Merchant generated successfully:', merchant_name, 'with ID:', merchant_id);
+
+    const purchase = {
+      merchant_id: merchant_id,
+      medium: "balance",
+      purchase_date: new Date(purchase_date).toISOString().split('T')[0],
+      amount: value,
+      status: "pending",
+      description: description
+    };
+    console.log('Prepared purchase object:', purchase);
+
+    // Use CapitalOneAPI to create purchase
+    console.log('Attempting to create purchase for account:', userId);
+
+    const purchaseResponse = await fetch(`http://api.nessieisreal.com/accounts/${userId}/purchases?key=575fbd2b0728ae7c870640023404c388`, {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(purchase)
+    });
+
+    console.log('Purchase API response status:', purchaseResponse.status);
+
+    if (!purchaseResponse.ok) {
+        console.error('Failed to add transaction. Status:', purchaseResponse.status);
+        throw new Error('Failed to add transaction');
+    }
+
+    const purchaseData = await purchaseResponse.json();
+    console.log('Purchase created successfully:', purchaseData);
+
+    setMessages(prev => {
+      console.log('Updating messages with new transaction');
+      return [...prev, { text: `Transaction added: ${merchant_name} - $${value}`, sender: 'ai' }];
+    });
+  } catch (error) {
+    console.error('Error in addTransaction:', error);
+    setMessages(prev => [...prev, { text: "Sorry, I couldn't add the transaction. Please try again later.", sender: 'ai' }]);
+  }
+
+  console.log('addTransaction function completed');
 }

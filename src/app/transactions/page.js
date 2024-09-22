@@ -11,8 +11,9 @@ export default function TransactionsPage() {
   const [qrCodeData, setQrCodeData] = useState('');
   const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
   const [ocrResult, setOcrResult] = useState(null);
-  const [loading, setLoading] = useState(false );
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [budgets, setBudgets] = useState([]);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -39,6 +40,26 @@ export default function TransactionsPage() {
       }
     };
 
+    const fetchBudgets = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/budgets', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        setBudgets(data);
+      } catch (error) {
+        console.error('Error fetching budgets:', error);
+      }
+    };
+
     const fetchTransactions = async (accountId) => {
       try {
         const response = await fetch(`http://api.nessieisreal.com/accounts/${accountId}/purchases?key=575fbd2b0728ae7c870640023404c388`, {
@@ -53,43 +74,41 @@ export default function TransactionsPage() {
         }
 
         const data = await response.json();
-        console.log('Fetched transactions:', data);
+        console.log('Fetched transactions:', data); // Add this line to log fetched transactions
 
-        const descriptions = data.map(transaction => transaction.description);
-        console.log('Transaction descriptions:', descriptions);
+        // Helper function to add delay
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        const classificationResponse = await fetch('http://localhost:3001/api/ai/merchant-classification', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ messages: descriptions }),
-        });
+        // Classify each transaction sequentially with delay
+        const classifiedTransactions = await Promise.all(data.map(async (transaction) => {
+          try {
+            console.log('Classifying transaction:', transaction); // Add this line to log the transaction being classified
+            const classificationResponse = await fetch('http://localhost:3001/api/ai/read', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ message: transaction.description, budgets }),
+            });
 
-        if (!classificationResponse.ok) {
-          throw new Error('Classification response was not ok');
-        }
+            if (!classificationResponse.ok) {
+              throw new Error('Classification response was not ok');
+            }
 
-        const classificationData = await classificationResponse.json();
-        console.log('Classification data:', classificationData);
+            const classificationData = await classificationResponse.json();
+        
+            transaction.category = classificationData.category; // Adjust based on your API response structure
+            console.log('Classified transaction:', classificationData.category); // Add this line to log classified transactions
+          } catch (error) {
+            console.error('Error classifying transaction:', error);
+            transaction.category = 'Unknown'; // Default category if classification fails
+          }
 
-        const categories = JSON.parse(classificationData.choices[0].message.content);
-        console.log('Parsed categories:', categories);
-
-        const vendorCategoryMap = {};
-        categories.forEach(category => {
-          category.vendors.forEach(vendor => {
-            vendorCategoryMap[vendor] = category.category;
-          });
-        });
-        console.log('Vendor-Category Map:', vendorCategoryMap);
-
-        const classifiedTransactions = data.map(transaction => ({
-          ...transaction,
-          category: vendorCategoryMap[transaction.description] || 'Unknown',
+          await delay(2000); // Add a 2-second delay
+          return transaction;
         }));
 
-        console.log('Classified transactions:', classifiedTransactions);
+        console.log('Classified transactions:', classifiedTransactions); // Add this line to log classified transactions
 
         setTransactions(classifiedTransactions);
         setLoading(false);
@@ -102,6 +121,7 @@ export default function TransactionsPage() {
     const initialize = async () => {
       const accountId = await fetchAccountId();
       if (accountId) {
+        await fetchBudgets();
         fetchTransactions(accountId);
       }
     };
@@ -170,12 +190,24 @@ export default function TransactionsPage() {
       <Navigation onSeraAIClick={handleSeraAIClick} currentPage={currentPage} />
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Transactions</h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">Transactions</h1>
+            <button
+              onClick={setupHandoff}
+              className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded flex items-center"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Upload a Receipt
+            </button>
+          </div>
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             {loading ? (
               <div className="flex items-center justify-center min-h-screen">
                 <div className="spinner-border animate-spin inline-block w-20 h-20 border-4 border-t-blue-500 border-b-blue-500 border-r-transparent border-l-transparent rounded-full" role="status"></div>
-                <p className="text-xl ml-4">Classifying transactions...</p>
+              
+              <p className="text-4xl font-bold ml-4 ">
+                Processing...
+              </p>
               </div>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
@@ -200,7 +232,7 @@ export default function TransactionsPage() {
                   {transactions.map((transaction) => (
                     <tr key={transaction._id}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                       
+                        {transaction.category ? transaction.category : 'Unknown'} 
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{transaction.description}</div>
@@ -221,13 +253,7 @@ export default function TransactionsPage() {
           </div>
 
           <div className="mt-6">
-            <button
-              onClick={setupHandoff}
-              className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded flex items-center"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Upload a Receipt
-            </button>
+       
           </div>
         </div>
       </main>

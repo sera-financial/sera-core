@@ -1,4 +1,5 @@
 
+
 'use client'
 import { useState, useEffect } from 'react';
 import Navigation from '../../components/navigation';
@@ -124,20 +125,46 @@ export default function Dashboard() {
                     }
                 });
 
-                // add each transaction to the transactions array
-                const transactionsData = await transactionsResponse.json();
-                transactionsData.forEach(transaction => {
-                    transactions.push(transaction);
-                });
-    
                 if (!transactionsResponse.ok) {
                     throw new Error('Network response was not ok');
                 }
-    
+
+                const transactionsData = await transactionsResponse.json();
+                console.log('Fetched transactions:', transactionsData);
+
+                const classifiedTransactions = await Promise.all(transactionsData.map(async (transaction) => {
+                  try {
+                    console.log('Classifying transaction:', transaction); // Add this line to log the transaction being classified
+                    const classificationResponse = await fetch('http://localhost:3001/api/ai/read', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ message: transaction.description, budgets }),
+                    });
+        
+                    if (!classificationResponse.ok) {
+                      throw new Error('Classification response was not ok');
+                    }
+        
+                    const classificationData = await classificationResponse.json();
                 
+                    transaction.category = classificationData.category; // Adjust based on your API response structure
+                    console.log('Classified transaction:', classificationData.category); // Add this line to log classified transactions
+                  } catch (error) {
+                    console.error('Error classifying transaction:', error);
+                    transaction.category = 'Unknown'; // Default category if classification fails
+                  }
+        
+                  return transaction;
+                }));
+
+                console.log('Classified transactions:', classifiedTransactions);
+
                 // store transactions in state
-                setTransactions(transactionsData);
-                setSyncedTransactions(transactionsData); // Add this line to set synced transactions
+                setTransactions(classifiedTransactions);
+               // setSyncedTransactions(classifiedTransactions); // Add this line to set synced transactions
+                console.log('Transactions state updated:', classifiedTransactions);
 
                 console.log(data.user);
                 setLoading(false);
@@ -185,6 +212,39 @@ export default function Dashboard() {
             fetchBalances();
         }
     }, [accountDetails]);
+
+    useEffect(() => {
+        const fetchBudgets = async () => {
+            try {
+                const response = await fetch(`http://localhost:3001/api/budgets/${accountDetails._id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+
+                // Calculate the total amount spent for each budget category
+                const updatedBudgets = data.map(budget => {
+                    const totalSpent = transactions
+                        .filter(transaction => transaction.category === budget.name)
+                        .reduce((sum, transaction) => sum + parseFloat(transaction.amount), 0);
+                    return { ...budget, amount_spent: transaction.amount };
+                });
+
+                setBudgets(updatedBudgets);
+            } catch (error) {
+                console.error('Error fetching budgets:', error);
+            }
+        };
+
+        if (accountDetails) {
+            fetchBudgets();
+        }
+    }, [accountDetails, transactions]);
 
     const generateFakeTransactions = async () => {
         try {
@@ -780,7 +840,16 @@ export default function Dashboard() {
                     throw new Error('Network response was not ok');
                 }
                 const data = await response.json();
-                setBudgets(data);
+
+                // Calculate the total amount spent for each budget category
+                const updatedBudgets = data.map(budget => {
+                    const totalSpent = transactions
+                        .filter(transaction => transaction.category === budget.name)
+                        .reduce((sum, transaction) => sum + parseFloat(transaction.amount), 0);
+                    return { ...budget, amount_spent: totalSpent };
+                });
+
+                setBudgets(updatedBudgets);
             } catch (error) {
                 console.error('Error fetching budgets:', error);
             }
@@ -789,7 +858,7 @@ export default function Dashboard() {
         if (accountDetails) {
             fetchBudgets();
         }
-    }, [accountDetails]);
+    }, [accountDetails, transactions]);
 
     const handleBudgetChange = (e) => {
         const { name, value } = e.target;
@@ -799,20 +868,25 @@ export default function Dashboard() {
     const handleBudgetSubmit = async (e) => {
         e.preventDefault();
         try {
+            // Calculate the total amount spent for the budget category
+            const totalSpent = transactions
+                .filter(transaction => transaction.category === newBudget.name)
+                .reduce((sum, transaction) => sum + parseFloat(transaction.amount), 0);
+
             const response = await fetch('http://localhost:3001/api/budgets/create', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ userId: accountDetails._id, ...newBudget })
+                body: JSON.stringify({ userId: accountDetails._id, ...newBudget, amount_spent: totalSpent })
             });
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
             const data = await response.json();
             setBudgets(data);
-            setNewBudget({ name: '', limit: '' });
+            setNewBudget({ name: '', limit: '', amount_spent: 0 });
             setIsBudgetModalOpen(false);
         } catch (error) {
             console.error('Error creating budget:', error);
@@ -916,7 +990,7 @@ export default function Dashboard() {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify(syncedTransactions)
+            body: JSON.stringify(synce)
         });
         const data = await response.json();
         console.log(data);
@@ -996,7 +1070,7 @@ export default function Dashboard() {
 									<th className="py-2 font-normal text-sm uppercase text-gray-500">
 										DESCRIPTOR
 									</th>
-									<th className="py-2 font-normal text-sm uppercase text-gray-500">
+									<th className="hidden py-2 font-normal text-sm uppercase text-gray-500">
 										Category
 									</th>
 									<th className="py-2 font-normal text-sm uppercase text-gray-500">
@@ -1009,7 +1083,7 @@ export default function Dashboard() {
 									<tr key={index} className="border-b">
 										<td className="py-2 uppercase">{transaction.description}</td>
 										<td className="py-2 uppercase">
-											{transaction.status}
+											{transaction.category}
 										</td>
 										<td className="py-2">
 											{transaction.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
@@ -1117,12 +1191,12 @@ export default function Dashboard() {
                               <i className="fa-solid fa-plus"></i> Create Budget
                             </button>
                         </h1>
-                        <div className="grid grid-cols-1 gap-4 gap-y-10 ">
+                        <div className="grid grid-cols-1 gap-4 gap-y-1 ">
                             {budgets.map((budget, index) => (
-                                <div key={index} className="bg-neutral-100 px-4 py-4 rounded-md border-l-4 border-blue-400 mt-4">
+                                <div key={index} className="bg-neutral-100 px-4 py-4 rounded-md border-l-4 border-blue-400 mt-2">
                                     <h1 className="text-lgfont-semibold">{budget.name}</h1>
                                     <p className="text-md text-neutral-400">
-                                    ${budget.spent}/${budget.limit}
+                                    ${budget.amount_spent }/${budget.limit}
                                     </p>
                                  
                                 </div>
@@ -1139,7 +1213,7 @@ export default function Dashboard() {
                             <div className="bg-white max-w-4xl w-full px-6 py-10 rounded-md shadow-md">
                                 <h2 className="text-xl font-bold mb-4">Create Budget</h2>
                                 <form onSubmit={handleBudgetSubmit} className="mb-4">
-                                    <input
+                                    <select
                                         type="text"
                                         name="name"
                                         value={newBudget.name}
@@ -1147,7 +1221,16 @@ export default function Dashboard() {
                                         placeholder="Budget Name"
                                         className="border p-2 mr-2 w-full"
                                         required
-                                    />
+                                    >
+
+                                        <option value="Food">Food</option>
+                                        <option value="Bills">Bills</option>
+                                        <option value="Entertainment">Entertainment</option>
+                                        <option value="Shopping">Shopping</option>
+                                        <option value="Travel">Travel</option>
+                                        <option value="Other">Other</option>
+
+                                      </select>
                                     <input
                                         type="number"
                                         name="limit"
