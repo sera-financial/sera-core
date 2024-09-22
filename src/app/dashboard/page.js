@@ -915,7 +915,7 @@ export default function Dashboard() {
                     </div>
                     <div className="ml-auto">
                         <div className="grid grid-cols-2 gap-x-4">
-                            <div className="bg-gradient-to-br cursor-pointer from-pink-200 hover:opacity-90 to-indigo-300 px-10 py-10 rounded-md rounded-sm flex items-end">
+                            <div className="bg-gradient-to-br cursor-pointer from-pink-200 hover:opacity-90 to-indigo-300 px-10 py-10 rounded-sm flex items-end">
                                 <h1 className="text-white font-bold text-lg">Manage your budget</h1>
                             </div>
 
