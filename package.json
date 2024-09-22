@@ -33,6 +33,7 @@
     "@tremor/react": "^3.18.2",
     "axios": "^1.7.7",
     "date-fns": "^4.1.0",
+    "dotenv": "^16.4.5",
     "faker": "^6.6.6",
     "fs": "^0.0.1-security",
     "multer": "^1.4.5-lts.1",
