@@ -1,4 +1,4 @@
-"use client";
+"use client"; 
 
 import { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
@@ -16,8 +16,10 @@ export default function BudgetsPage() {
 	]);
 	const [accountDetails, setAccountDetails] = useState(null);
 	const [loading, setLoading] = useState(true);
-  const [newBudget, setNewBudget] = useState({ name: '', limit: '' });
-  
+	const [newBudget, setNewBudget] = useState({ name: "", limit: "" });
+	const [token, setToken] = useState(localStorage.getItem("token"));
+	const [userId, setUserId] = useState();
+	const [refreshTrigger, setRefreshTrigger] = useState(0);
 
 	const handleSeraAIClick = () => {
 		// Implement SeraAI click functionality
@@ -44,8 +46,7 @@ export default function BudgetsPage() {
 				const data = await response.json();
 				setAccountDetails(data.user); // Ensure this matches the backend response structure
 				setLoading(false);
-				const token = localStorage.getItem("token");
-				fetchBudgets(token, data.user._id);
+				setUserId(data.user._id);
 			} catch (error) {
 				console.error("Error fetching account details:", error);
 			}
@@ -58,80 +59,150 @@ export default function BudgetsPage() {
 		};
 	}, []);
 
-	const fetchBudgets = async (token, userId) => {
-		try {
-			console.log("Fetching budgets for user: " + userId);
 
-			if (!token || !userId) {
-				console.error("No token or userId found");
-				return;
-			}
+  const handleBudgetSubmit = async () => {
 
-			console.log("Flag");
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/api/budgets/${userId}`,
-				{
-					method: "GET",
-					headers: {
-						Authorization: `Bearer ${token}`,
-						"Content-Type": "application/json",
-					},
+
+    try {
+      console.log("Submitting new budget:", newBudget);
+  
+      const response = await fetch("http://localhost:3001/api/budgets/create", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: accountDetails._id,
+          ...newBudget,
+          limit: Number(newBudget.limit), // Ensure limit is a number
+        }),
+      });
+  
+      if (!response.ok) {
+        console.error("Response status:", response.status);
+        throw new Error("Failed to create budget");
+      }
+  
+      const data = await response.json();
+      console.log("Budget created:", data);
+  
+      // Clear the form and close the modal
+      setNewBudget({ name: "", limit: "" });
+      setIsBudgetModalOpen(false);
+  
+      // Fetch updated budgets
+      await fetchBudgets();
+      console.log("Budgets refreshed");
+    } catch (error) {
+      console.error("Error creating budget:", error);
+    }
+  
+  };
+  
+  
+
+	useEffect(() => {
+		const fetchBudgets = async () => {
+			try {
+				console.log("Fetching budgets for user: " + userId);
+
+				if (!token || !userId) {
+					console.error("No token or userId found");
+          return
 				}
-			);
 
-			console.log(`${process.env.NEXT_PUBLIC_API_URL}/api/budgets/${userId}`);
+				const response = await fetch(
+					`${process.env.NEXT_PUBLIC_API_URL}/api/budgets/${userId}`,
+					{
+						method: "GET",
+						headers: {
+							Authorization: `Bearer ${localStorage.getItem("token")}`,
+							"Content-Type": "application/json",
+						},
+					}
+				);
 
-			if (!response.ok) {
-				throw new Error("Failed to fetch budgets");
+				console.log(`${process.env.NEXT_PUBLIC_API_URL}/api/budgets/${userId}`);
+
+				if (!response.ok) {
+					throw new Error("Failed to fetch budgets");
+				}
+
+				console.log("Budgets: " + response);
+				const data = await response.json();
+
+				// Transform the data to match the expected format
+				const formattedBudgets = data.map((budget, index) => ({
+					name: budget.name,
+					amount: budget.limit,
+					color:
+						budget.color || `hsl(${Math.floor(index * 137.5) % 360}, 70%, 50%)`, // Generate a vibrant, diverse color palette
+				}));
+
+				console.log(formattedBudgets);
+				setBudgets(formattedBudgets);
+			} catch (error) {
+				console.error("Error fetching budgets:", error);
+				// Handle error (e.g., show error message to user)
 			}
+		};
 
-			console.log("Budgets: " + response);
-			const data = await response.json();
-
-			// Transform the data to match the expected format
-			const formattedBudgets = data.map((budget, index) => ({
-				name: budget.name,
-				amount: budget.limit,
-				color:
-					budget.color ||
-					`hsl(${Math.floor(index * 137.5) % 360}, 70%, 50%)`, // Generate a vibrant, diverse color palette
-			}));
-
-			console.log(formattedBudgets);
-			setBudgets(formattedBudgets);
-		} catch (error) {
-			console.error("Error fetching budgets:", error);
-			// Handle error (e.g., show error message to user)
-		}
-	};
+		fetchBudgets();
+	}, [token, userId, refreshTrigger]);
 
 	const handleBudgetChange = (e) => {
-    const { name, value } = e.target;
-    setNewBudget((prev) => ({ ...prev, [name]: value }));
-};
+		const { name, value } = e.target;
+		setNewBudget((prev) => ({ ...prev, [name]: value }));
+	};
 
-const handleBudgetSubmit = async (e) => {
-    e.preventDefault();
+  const fetchBudgets = async () => {
     try {
-        const response = await fetch('http://localhost:3001/api/budgets/create', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ userId: accountDetails._id, ...newBudget})
-        });
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
+      console.log("Fetching budgets for user: " + userId);
+
+      if (!token || !userId) {
+        console.error("No token or userId found");
+        return
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/budgets/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
         }
-        const data = await response.json();
-        setBudgets(data);
-        setNewBudget({ name: '', limit: '' });
-        setIsBudgetModalOpen(false);
+      );
+
+      console.log(`${process.env.NEXT_PUBLIC_API_URL}/api/budgets/${userId}`);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch budgets");
+      }
+
+      console.log("Budgets: " + response);
+      const data = await response.json();
+
+      // Transform the data to match the expected format
+      const formattedBudgets = data.map((budget, index) => ({
+        name: budget.name,
+        amount: budget.limit,
+        color:
+          budget.color || `hsl(${Math.floor(index * 137.5) % 360}, 70%, 50%)`, // Generate a vibrant, diverse color palette
+      }));
+
+      console.log(formattedBudgets);
+      setBudgets(formattedBudgets);
     } catch (error) {
-        console.error('Error creating budget:', error);
+      console.error("Error fetching budgets:", error);
+      // Handle error (e.g., show error message to user)
     }
-};
+  };
+
+
+  
 
 	const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
 
@@ -148,7 +219,7 @@ const handleBudgetSubmit = async (e) => {
 							<div>
 								<h2 className="text-xl font-semibold mb-4">Budget Breakdown</h2>
 								<div style={{ width: "100%", height: 300 }}>
-									<ResponsiveContainer>
+									<ResponsiveContainer key={budgets.length}>
 										<PieChart>
 											<Pie
 												data={budgets}
@@ -206,16 +277,31 @@ const handleBudgetSubmit = async (e) => {
 			{isBudgetModalOpen && (
 				<div className="fixed z-10 inset-0 overflow-y-auto">
 					<div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-						<div className="fixed inset-0 transition-opacity" aria-hidden="true">
+						<div
+							className="fixed inset-0 transition-opacity"
+							aria-hidden="true"
+						>
 							<div className="absolute inset-0 bg-gray-500 opacity-75"></div>
 						</div>
-						<span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+						<span
+							className="hidden sm:inline-block sm:align-middle sm:h-screen"
+							aria-hidden="true"
+						>
+							&#8203;
+						</span>
 						<div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
 							<div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-								<h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Add New Budget</h3>
-								<form onSubmit={handleBudgetSubmit}>
+								<h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+									Add New Budget
+								</h3>
+								<div>
 									<div className="mb-4">
-										<label htmlFor="name" className="block text-sm font-medium text-gray-700">Budget Name</label>
+										<label
+											htmlFor="name"
+											className="block text-sm font-medium text-gray-700"
+										>
+											Budget Name
+										</label>
 										<input
 											type="text"
 											name="name"
@@ -226,7 +312,12 @@ const handleBudgetSubmit = async (e) => {
 										/>
 									</div>
 									<div className="mb-4">
-										<label htmlFor="limit" className="block text-sm font-medium text-gray-700">Budget Limit</label>
+										<label
+											htmlFor="limit"
+											className="block text-sm font-medium text-gray-700"
+										>
+											Budget Limit
+										</label>
 										<input
 											type="number"
 											name="limit"
@@ -238,20 +329,21 @@ const handleBudgetSubmit = async (e) => {
 									</div>
 									<div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
 										<button
-											type="submit"
+											onClick={() => {
+                        handleBudgetSubmit()
+                      }}
 											className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
 										>
 											Add Budget
 										</button>
 										<button
-											type="button"
 											onClick={() => setIsBudgetModalOpen(false)}
 											className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
 										>
 											Cancel
 										</button>
 									</div>
-								</form>
+								</div>
 							</div>
 						</div>
 					</div>
