@@ -14,9 +14,30 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [budgets, setBudgets] = useState([]);
-
+  const [accountId, setAccountId] = useState(null);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+  const fetchAccountId = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/users/account', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+    //  setAccountId(data.user.accountId[0]); // Adjust this based on your API response structure
+      return data.user.accountId[0]; // Adjust this based on your API response structure
+    } catch (error) {
+      console.error('Error fetching account ID:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     const fetchAccountId = async () => {
@@ -33,6 +54,7 @@ export default function TransactionsPage() {
         }
 
         const data = await response.json();
+      //  setAccountId(data.user.accountId[0]); // Adjust this based on your API response structure
         return data.user.accountId[0]; // Adjust this based on your API response structure
       } catch (error) {
         console.error('Error fetching account ID:', error);
@@ -61,6 +83,7 @@ export default function TransactionsPage() {
     };
 
     const fetchTransactions = async (accountId) => {
+      setAccountId(accountId);
       try {
         const response = await fetch(`http://api.nessieisreal.com/accounts/${accountId}/purchases?key=575fbd2b0728ae7c870640023404c388`, {
           method: 'GET',
@@ -164,9 +187,10 @@ export default function TransactionsPage() {
 
   async function setupHandoff() {
     const uniqueId = await generateQRCode();
-    
+    const accountId = await fetchAccountId();
+
     // Create the full URL for the upload page
-    const uploadUrl = `http://100.94.213.94:3000/upload/${uniqueId}`;
+    const uploadUrl = `http://100.94.213.94:3000/upload/${uniqueId}?accountId=${accountId}`;
     console.log('QR Code URL:', uploadUrl); // Add this line
     
     // Generate QR code with the full URL

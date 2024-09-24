@@ -13,6 +13,7 @@ export default function Dashboard() {
     const [budgets, setBudgets] = useState([]);
     const [newBudget, setNewBudget] = useState({ name: '', limit: '' });
     const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+    const [isRetirementModalOpen, setIsRetirementModalOpen] = useState(false);
     const [syncedTransactions, setSyncedTransactions] = useState(null);
     const categoryIcons = {
         'Food': { icon: 'fa-utensils', color: 'bg-red-400' },
@@ -790,6 +791,7 @@ export default function Dashboard() {
     
             // Create mock transactions
             const accountId = accountDetails.accountId[0]; // Replace with actual account ID
+            localStorage.setItem('accountId', accountId);
             for (const merchant of merchants) {
               setVerboseProgress(`${completedMerchants} / ${totalMerchants} merchants generated`);
 
@@ -998,6 +1000,9 @@ export default function Dashboard() {
     }
     
 
+    const getCategoryIcon = (category) => {
+        return categoryIcons[category] || { icon: 'fa-question', color: 'bg-gray-400' };
+    };
 
     return (
         <>
@@ -1026,138 +1031,243 @@ export default function Dashboard() {
                     </div>
                     <div className="ml-auto">
                         <div className="grid grid-cols-2 gap-x-4">
-                            <div className="bg-gradient-to-br cursor-pointer from-pink-200 hover:opacity-90 to-indigo-300 px-10 py-10 rounded-sm flex items-end">
+                            <div 
+                                className="bg-gradient-to-br cursor-pointer from-blue-400 hover:opacity-90 to-blue-300 px-10 py-10 rounded-sm flex items-end"
+                                onClick={() => setIsBudgetModalOpen(true)}
+                            >
                                 <h1 className="text-white font-bold text-lg">Manage your budget</h1>
                             </div>
 
-							<div className="cursor-pointer bg-gradient-to-r from-pink-200 hover:opacity-90 to-red-200 px-10 py-10 rounded-sm flex items-end">
-								<h1 className="text-white font-bold text-lg ml-auto">
-									Plan for retirement
-								</h1>
-							</div>
-						</div>
-					</div>
-				</div>
+                            <div 
+                                style={{ 
+                                    backgroundImage: 'url("https://www.fidelity.com/bin-public/600_Fidelity_Com_English/images/migration/article/content_08/protect_ret_income_2020_banner.jpg")', 
+                                    backgroundSize: 'cover', 
+                                    backgroundRepeat: 'no-repeat',
+                                    backgroundPosition: 'center',
+                                    position: 'relative' // Add this line
+                                }}
+                                className="cursor-pointer  px-10 py-10 rounded-sm flex items-end"
+                                onClick={() => setIsRetirementModalOpen(true)}
+                            >
+                                <div 
+                                    style={{ 
+                                        content: '""', 
+                                        position: 'absolute', 
+                                        top: 0, 
+                                        left: 0, 
+                                        
+                                        width: '100%', 
+                                        height: '100%', 
+                                        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Add this line for black tint
+                                        borderRadius: 'inherit' // Add this line to match the parent border radius
+                                    }} 
+                                />
+                                <h1 className="text-white font-bold text-lg ml-auto z-10">
+                                    Plan for retirement
+                                </h1>
+                                
+                            </div>
+                        </div>
+                    </div>
 
-				<div className="grid grid-cols-3 gap-4 gap-y-20 mt-10">
-					<div className="col-span-2">
-						<h1 className="flex items-center">
-							RECENT TRANSACTIONS
-              <button
-								onClick={generateFakeTransactions}
-								className="ml-auto bg-neutral-500 hover:bg-neutral-700 text-white py-1 px-2 text-xs rounded-sm mb-4 ml-4"
-							>
-							<i className="fa-solid fa-plus"></i>	Generate Transactions
-							</button>
-              <button
-								onClick={syncAccount}
-								className="ml-2 bg-neutral-500 hover:bg-neutral-700 text-white py-1 px-2 text-xs rounded-sm mb-4 "
-							>
-							<i className="fa-solid fa-sync"></i>	Sync Account
-							</button>
-						</h1>
-            <span className="text-sm text-neutral-400">
-              {verboseProgress}
-              </span>
-            {progress > 0 && (
+                    {isBudgetModalOpen && (
+                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                            <div className="bg-white max-w-4xl w-full px-6 py-10 rounded-md shadow-md">
+                                <h2 className="text-xl font-bold mb-4">Manage your budget</h2>
+                                <p>Your budget management passage goes here...</p>
+                                <div className="flex justify-end mt-10">
+                                    <button
+                                        type="button"
+                                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2"
+                                        onClick={() => setIsBudgetModalOpen(false)}
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {isRetirementModalOpen && (
+                                              <div className="fixed z-50 inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                                              <div className="bg-white max-w-7xl w-full rounded-lg shadow-lg overflow-hidden">
+                                                  <div className="relative">
+                                                      <img 
+                                                          src="https://www.fidelity.com/bin-public/600_Fidelity_Com_English/images/migration/article/content_08/protect_ret_income_2020_banner.jpg" 
+                                                          alt="Retirement Planning" 
+                                                          className="w-full h-40 object-cover scrollable"
+                                                      />
+                                                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                                          <h1 className="text-4xl font-bold text-white">Plan for Retirement</h1>
+                                                      </div>
+                                                  </div>
+                                                  <div className="p-8">
+                                                      <h2 className="text-2xl font-semibold text-blue-600 mb-4">Securing Your Future</h2>
+                                                      <p className="text-lg leading-relaxed mb-6">
+                                                          Planning for retirement is an essential part of financial well-being. It requires careful consideration of your savings, investments, and long-term goals. Whether you're just starting your career or approaching retirement age, having a strategic plan ensures that you can enjoy financial freedom in your later years.
+                                                      </p>
+                  
+                                                      <h3 className="text-xl font-semibold mb-4 text-blue-500">1. Start Saving Early</h3>
+                                                      <p className="mb-4">
+                                                          The sooner you begin, the more time your investments will have to grow. Even small contributions can add up over time due to compound interest.
+                                                      </p>
+                  
+                                                      <h3 className="text-xl font-semibold mb-4 text-blue-500">2. Set Clear Goals</h3>
+                                                      <p className="mb-4">
+                                                          Determine how much you'll need for retirement based on your lifestyle, health, and family needs. Planning for medical expenses and inflation is crucial.
+                                                      </p>
+                  
+                                                      <h3 className="text-xl font-semibold mb-4 text-blue-500">3. Diversify Investments</h3>
+                                                      <p className="mb-4">
+                                                          Spread your savings across different types of assets, such as stocks, bonds, and real estate, to minimize risk.
+                                                      </p>
+                  
+                                                      <h3 className="text-xl font-semibold mb-4 text-blue-500">4. Review Regularly</h3>
+                                                      <p className="mb-6">
+                                                          Regularly check your retirement plan to ensure you're on track. Adjust your savings and investment strategy based on changes in income, market trends, and personal goals.
+                                                      </p>
+                  
+                                                      <p className="text-lg leading-relaxed">
+                                                          By planning ahead and making informed decisions, you can secure your financial future and enjoy peace of mind in retirement.
+                                                      </p>
+                  
+                                                      <div className="flex justify-end mt-10">
+                                                          <button
+                                                              className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2"
+                                                              onClick={() => setIsRetirementModalOpen(false)}
+                                                          >
+                                                              Close
+                                                          </button>
+                                                      </div>
+                                                  </div>
+                                              </div>
+                                          </div>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 gap-y-20 mt-10">
+                    <div className="col-span-2">
+                        <h1 className="flex items-center">
+                            RECENT TRANSACTIONS
+                            <button
+                                onClick={generateFakeTransactions}
+                                className="ml-auto bg-neutral-500 hover:bg-neutral-700 text-white py-1 px-2 text-xs rounded-sm mb-4 ml-4"
+                            >
+                            <i className="fa-solid fa-plus"></i> Generate Transactions
+                            </button>
+                            <button
+                                onClick={syncAccount}
+                                className="ml-2 bg-neutral-500 hover:bg-neutral-700 text-white py-1 px-2 text-xs rounded-sm mb-4 "
+                            >
+                            <i className="fa-solid fa-sync"></i> Sync Account
+                            </button>
+                        </h1>
+                        <span className="text-sm text-neutral-400">
+                            {verboseProgress}
+                        </span>
+                        {progress > 0 && (
                             <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
                                 <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
                             </div>
                         )}
-						<table className="w-full text-left">
-							<thead>
-								<tr className="border-b">
-									<th className="py-2 font-normal text-sm uppercase text-gray-500">
-										DESCRIPTOR
-									</th>
-									<th className="hidden py-2 font-normal text-sm uppercase text-gray-500">
-										Category
-									</th>
-									<th className="py-2 font-normal text-sm uppercase text-gray-500">
-										Amount
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								{displayedTransactions.map((transaction, index) => (
-									<tr key={index} className="border-b">
-										<td className="py-2 uppercase">{transaction.description}</td>
-										<td className="py-2 uppercase">
-											{transaction.category}
-										</td>
-										<td className="py-2">
-											{transaction.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-						{transactions.length > 10 && (
-							<div className="mt-2 text-left">
-								<button
-									onClick={() => setShowAllTransactions(!showAllTransactions)}
-									className="bg-blue-500 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded"
-								>
-									{showAllTransactions ? "Show Less" : "Show All Transactions"}
-								</button>
-							</div>
-						)}
-
-
-<div className="col-span-4 mt-10">
-                        <h1 className='flex'>
-                            YOUR BILLS
-                            <button 
-                                onClick={generateMockBills} 
-                                className='ml-auto text-sm bg-gray-500 hover:bg-gray-700 text-white text-xs py-1 px-2 rounded-sm'
-                            >
-                            <i className="fa-solid fa-plus"></i>	Generate Mock Bills
-                            </button>
-                        </h1>
-                        <div className="mt-4">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Payee</th>
-                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Due Date</th>
-                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Amount</th>
-                                        <th className="py-2 font-normal text-sm uppercase text-gray-500">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {displayedBills.map((bill, index) => (
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="border-b">
+                                    <th className="py-2 font-normal text-sm uppercase text-gray-500">
+                                        DESCRIPTOR
+                                    </th>
+                                    <th className=" py-2 font-normal text-sm uppercase text-gray-500">
+                                        Category
+                                    </th>
+                                    <th className="py-2 font-normal text-sm uppercase text-gray-500">
+                                        Amount
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {displayedTransactions.map((transaction, index) => {
+                                    const { icon, color } = getCategoryIcon(transaction.category);
+                                    return (
                                         <tr key={index} className="border-b">
-                                            <td className="py-2">{bill.payee}</td>
-                                            <td className="py-2">{new Date(bill.payment_date).toLocaleDateString()}</td>
-                                            <td className="py-2">${bill.payment_amount.toFixed(2)}</td>
-                                            <td className="py-2 capitalize">{bill.status}</td>
+                                            <td className="py-2 uppercase">{transaction.description}</td>
+                                            <td className="py-2 uppercase flex items-center">
+                                                <i className={`fa ${icon} ${color} px-2 py-1 rounded-full mr-2`}></i>
+                                                {transaction.category}
+                                            </td>
+                                            <td className="py-2">
+                                                {transaction.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                                            </td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            {bills.length > 10 && (
-                                <div className="mt-4 ">
-                                    <button
-                                        onClick={() => setShowAllBills(!showAllBills)}
-                                        className="bg-blue-500 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded"
-                                    >
-                                        {showAllBills ? "Show Less" : "Show All Bills"}
-                                    </button>
-                                </div>
-                            )}
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                        {transactions.length > 10 && (
+                            <div className="mt-2 text-left">
+                                <button
+                                    onClick={() => setShowAllTransactions(!showAllTransactions)}
+                                    className="bg-blue-500 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-4 rounded"
+                                >
+                                    {showAllTransactions ? "Show Less" : "Show All Transactions"}
+                                </button>
+                            </div>
+                        )}
+
+
+                        <div className="col-span-4 mt-10">
+                            <h1 className='flex'>
+                                YOUR BILLS
+                                <button 
+                                    onClick={generateMockBills} 
+                                    className='ml-auto text-sm bg-gray-500 hover:bg-gray-700 text-white text-xs py-1 px-2 rounded-sm'
+                                >
+                                <i className="fa-solid fa-plus"></i> Generate Mock Bills
+                                </button>
+                            </h1>
+                            <div className="mt-4">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="border-b">
+                                            <th className="py-2 font-normal text-sm uppercase text-gray-500">Payee</th>
+                                            <th className="py-2 font-normal text-sm uppercase text-gray-500">Due Date</th>
+                                            <th className="py-2 font-normal text-sm uppercase text-gray-500">Amount</th>
+                                            <th className="py-2 font-normal text-sm uppercase text-gray-500">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {displayedBills.map((bill, index) => (
+                                            <tr key={index} className="border-b">
+                                                <td className="py-2">{bill.payee}</td>
+                                                <td className="py-2">{new Date(bill.payment_date).toLocaleDateString()}</td>
+                                                <td className="py-2">${bill.payment_amount.toFixed(2)}</td>
+                                                <td className="py-2 capitalize">{bill.status}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                {bills.length > 10 && (
+                                    <div className="mt-4 ">
+                                        <button
+                                            onClick={() => setShowAllBills(!showAllBills)}
+                                            className="bg-blue-500 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded"
+                                        >
+                                            {showAllBills ? "Show Less" : "Show All Bills"}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
+
+                        <br></br>  <br></br>  <br></br>  <br></br>
+
                     </div>
 
-                    <br></br>  <br></br>  <br></br>  <br></br>
-
-					</div>
-
-					<div className="col-span-1 border-l-2 border-neutral-100 pl-4">
-						<h1 className='flex'>ENDING BALANCES
-                        {balances.length != 0 && (
+                    <div className="col-span-1 border-l-2 border-neutral-100 pl-4">
+                        <h1 className='flex'>ENDING BALANCES
+                            {balances.length != 0 && (
                                 <button 								onClick={() => setIsModalOpen(true)}
-                                 className='ml-auto text-xs bg-neutral-500 hover:bg-neutral-700  text-white  py-1 px-2 rounded-sm'><i className="fa-solid fa-plus"></i>	Add Account</button>
-                        )}
+                                    className='ml-auto text-xs bg-neutral-500 hover:bg-neutral-700  text-white  py-1 px-2 rounded-sm'><i className="fa-solid fa-plus"></i> Add Account</button>
+                            )}
                         </h1>
                         {balances.map((account, index) => (
                             <div key={index} className="bg-neutral-100 shadow-md rounded-sm mt-4 p-4 mb-4">
@@ -1170,51 +1280,49 @@ export default function Dashboard() {
                         ))}
                         {balances.length === 0 && (
                             <div className="text-center bg-neutral-100 px-4 py-10 mt-2">
-							<i className="fa-solid fa-bank fa-2xl text-neutral-400"></i>
-							<p className="mt-4">
-								Hmm, looks like you haven't connected an account to Sera.
-							</p>
-							<button
-								className="bg-gradient-to-br from-blue-200 hover:opacity-90 to-blue-300 px-10 py-2 rounded-md mt-4"
-								onClick={() => setIsModalOpen(true)}
-							>
-								Connect your bank account
+                                <i className="fa-solid fa-bank fa-2xl text-neutral-400"></i>
+                                <p className="mt-4">
+                                    Hmm, looks like you haven't connected an account to Sera.
+                                </p>
+                                <button
+                                    className="bg-gradient-to-br from-blue-200 hover:opacity-90 to-blue-300 px-10 py-2 rounded-md mt-4"
+                                    onClick={() => setIsModalOpen(true)}
+                                >
+                                    Connect your bank account
                                 </button>
                             </div>
                         )}
 
-<div className="col-span-4 mt-10 border-t-2 border-neutral-100 ">
-						<h1 className='flex mt-4  '>YOUR BUDGETS
-                            <button 
-                                onClick={() => setIsBudgetModalOpen(true)} 
-                                className='ml-auto text-xs bg-gray-500 hover:bg-gray-700 text-white py-1 px-2 rounded-sm'>
-                              <i className="fa-solid fa-plus"></i> Create Budget
-                            </button>
-                        </h1>
-                        <div className="grid grid-cols-1 gap-4 gap-y-1 ">
-                            {budgets.map((budget, index) => (
-                                <div key={index} className="bg-neutral-100 px-4 py-4 rounded-md border-l-4 border-blue-400 mt-2">
-                                    <h1 className="text-lgfont-semibold">{budget.name}</h1>
-                                    <p className="text-md text-neutral-400">
-                                    ${budget.amount_spent }/${budget.limit}
-                                    </p>
-                                 
-                                </div>
-                            ))}
+                        <div className="col-span-4 mt-10 border-t-2 border-neutral-100 ">
+                            <h1 className='flex mt-4  '>YOUR BUDGETS
+                                <button 
+                                    onClick={() => setIsBudgetModalOpen(true)} 
+                                    className='ml-auto text-xs bg-gray-500 hover:bg-gray-700 text-white py-1 px-2 rounded-sm'>
+                                    <i className="fa-solid fa-plus"></i> Create Budget
+                                </button>
+                            </h1>
+                            <div className="grid grid-cols-1 gap-4 gap-y-1 ">
+                                {budgets.map((budget, index) => (
+                                    <div key={index} className="bg-neutral-100 px-4 py-4 rounded-md border-l-4 border-blue-400 mt-2">
+                                        <h1 className="text-lgfont-semibold">{budget.name}</h1>
+                                        <p className="text-md text-neutral-400">
+                                            ${budget.amount_spent }/${budget.limit}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+
                         </div>
-
                     </div>
-					</div>
-
-		
 
                     {isBudgetModalOpen && (
                         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
                             <div className="bg-white max-w-4xl w-full px-6 py-10 rounded-md shadow-md">
                                 <h2 className="text-xl font-bold mb-4">Create Budget</h2>
                                 <form onSubmit={handleBudgetSubmit} className="mb-4">
-                                    <select
+                                    <input
                                         type="text"
+                                        id="budget_name"
                                         name="name"
                                         value={newBudget.name}
                                         onChange={handleBudgetChange}
@@ -1223,14 +1331,7 @@ export default function Dashboard() {
                                         required
                                     >
 
-                                        <option value="Food">Food</option>
-                                        <option value="Bills">Bills</option>
-                                        <option value="Entertainment">Entertainment</option>
-                                        <option value="Shopping">Shopping</option>
-                                        <option value="Travel">Travel</option>
-                                        <option value="Other">Other</option>
-
-                                      </select>
+                                    </input>
                                     <input
                                         type="number"
                                         name="limit"

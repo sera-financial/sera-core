@@ -1,15 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import CapturePhoto from '@/components/CapturePhoto';
 import axios from 'axios';
-
+import { useRouter } from 'next/router';
 const API_KEY = 'XfmvRCZToSgHhxtQlYdP'; // Use your actual API key
 
 export default function UploadPage() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
+  const accountId = searchParams.get('accountId');
+
   const [uploadMethod, setUploadMethod] = useState(null);
-  const { id } = useParams();
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -33,7 +36,7 @@ export default function UploadPage() {
       )}
 
       {uploadMethod === 'file' && (
-        <FileUpload id={id} />
+        <FileUpload id={id} accountId={accountId} />
       )}
 
       {uploadMethod === 'camera' && (
@@ -43,7 +46,7 @@ export default function UploadPage() {
   );
 }
 
-function FileUpload({ id }) {
+function FileUpload({ id, accountId }) {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
@@ -63,25 +66,22 @@ function FileUpload({ id }) {
     setUploading(true);
 
     try {
-      // Run OCR directly without uploading
+      console.log('Account ID:', accountId);
       const ocrData = await runOCR(file);
       setOcrResult(ocrData.extractedText);
       setUploadStatus('OCR completed successfully');
-      console.log(ocrData)
+      console.log('OCR Data:', ocrData);
 
-      
       // Extract vendor and amount from OCR result
-      const vendor = ocrData.choices[0].message.content.vendor; // Adjust based on actual OCR result structure
-      const amount = ocrData.choices[0].message.content.amount; // Adjust based on actual OCR result structure
+      const ocrContent = JSON.parse(ocrData.extractedText.choices[0].message.content);
+      const vendor = ocrContent.vendor;
+      const amount = ocrContent.amount;
 
-      
-
-      const data = await response.json();
-      console.log(data.objectCreated._id);
+      console.log('Vendor:', vendor, 'Amount:', amount);
 
       // Add transaction to Capital One API
       const transactionResponse = await fetch(
-        `http://api.nessieisreal.com/accounts/${id}/purchases?key=575fbd2b0728ae7c870640023404c388`,
+        `http://api.nessieisreal.com/accounts/${accountId}/purchases?key=575fbd2b0728ae7c870640023404c388`,
         {
           method: "POST",
           headers: {
@@ -97,13 +97,12 @@ function FileUpload({ id }) {
         }
       );
 
-
       const transactionData = await transactionResponse.json();
-      console.log(transactionData);
+      console.log('Transaction Data:', transactionData);
 
     } catch (error) {
       console.error('OCR error:', error);
-      setUploadStatus('OCR failed' + error);
+      setUploadStatus('OCR failed: ' + error.message);
     } finally {
       setUploading(false);
     }
@@ -154,15 +153,7 @@ function FileUpload({ id }) {
     }
   };
 
-  async function fetchAccountId() {
-    try {
-      const { id } = useParams(); // Get the account ID from the URL
-      return id;
-    } catch (error) {
-      console.error('Error fetching account ID:', error);
-      return null;
-    }
-  };
+
 
   return (
     <>
