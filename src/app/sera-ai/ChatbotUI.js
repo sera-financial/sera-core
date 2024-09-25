@@ -7,52 +7,71 @@ export default function ChatbotUI() {
   const [input, setInput] = useState('');
 
   const handleSubmit = async (e) => {
+    console.log('handleSubmit function called');
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim()) {
+      console.log('Input is empty, returning');
+      return;
+    }
 
+    console.log('Setting messages with user input:', input);
     setMessages(prev => [...prev, { text: input, sender: 'user' }, { text: '', sender: 'ai', isStreaming: true }]);
     setInput('');
 
     try {
+      console.log('Sending request to AI chat endpoint');
       const response = await fetch('http://localhost:3001/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input })
       });
 
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) {
+        console.error('Network response was not ok');
+        throw new Error('Network response was not ok');
+      }
 
       console.log('Response received:', response);
-      const data = JSON.parse(await response.json());
+      let data = await response.json();
+      console.log("The data is: ", data);
+      const content = data.content;
+      console.log("The content is: ", data.content);
+      console.log("The type is: ", data.type);
 
-      const userId = (await fetch('http://localhost:3001/api/users/account', {
+      console.log('Fetching user account');
+      const userResponse = await fetch('http://localhost:3001/api/users/account', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      }).then(res => res.json())).user._id;
+      });
+      const userData = await userResponse.json();
+      const userId = userData.user._id;
+      console.log('User ID:', userId);
 
-      const content = data?.content;
-      console.log("The content is: ", content);
-      for (let i = 0; i < data?.type?.length; i++) {
-        const action = data.type[i];
+      if (data?.type) {
+        console.log('Processing actions:', data.type);
+        for (let i = 0; i < data.type.length; i++) {
+          const action = data.type[i];
+          console.log('Processing action:', action);
 
-        switch (action) {
-          case 'text':
-            await streamContent(content, setMessages);
-            break;
-          case 'updateBudget':
-            await updateBudget(userId, content, setMessages);
-            break;
-          case 'addTransaction':
-            await addTransaction(userId, content, setMessages);
-            break;
-          case 'reviewSpending':
-            await reviewSpending(userId, content, setMessages);
-            break;
-          default:
-            console.log('Unhandled action type:', action);
+          switch (action) {
+            case 'text':
+              console.log('Streaming content');
+              await streamContent(content, setMessages);
+              break;
+            case 'updateBudget':
+              console.log('Updating budget');
+              await updateBudget(userId, content, setMessages);
+              break;
+            default:
+              console.log('Unhandled action type:', action);
+          }
         }
+      } else {
+        console.log('No actions to process');
+        // If no specific action, treat as text content
+        await streamContent(content, setMessages);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error in handleSubmit:', error);
       setMessages(prev => [...prev, { text: "Sorry, I couldn't process that request.", sender: 'ai' }]);
     }
   };
@@ -158,7 +177,7 @@ async function addTransaction(userId, content, setMessages) {
       merchant_id: merchant_id,
       medium: "balance",
       purchase_date: new Date(purchase_date).toISOString().split('T')[0],
-      amount: value,
+      amount: Number(value),
       status: "pending",
       description: description
     };
